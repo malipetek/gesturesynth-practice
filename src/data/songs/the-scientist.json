@@ -18,7 +18,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -29,7 +29,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -40,7 +40,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -51,7 +51,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -62,7 +62,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -73,7 +73,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -84,7 +84,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -95,7 +95,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -106,7 +106,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -117,7 +117,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -128,7 +128,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -139,7 +139,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -150,7 +150,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -161,7 +161,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -172,7 +172,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -183,7 +183,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -194,7 +194,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -205,7 +205,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -216,7 +216,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -227,7 +227,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -238,7 +238,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -249,7 +249,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -260,7 +260,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -271,7 +271,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -282,7 +282,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -293,7 +293,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -304,7 +304,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -315,7 +315,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -326,7 +326,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -337,7 +337,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -348,7 +348,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -359,7 +359,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -370,7 +370,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -381,7 +381,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -392,7 +392,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -403,7 +403,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -414,7 +414,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -425,7 +425,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -436,7 +436,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -447,7 +447,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -458,7 +458,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -469,7 +469,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -480,7 +480,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -491,7 +491,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -502,7 +502,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -513,7 +513,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -524,7 +524,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -535,7 +535,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -546,7 +546,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -557,7 +557,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -568,7 +568,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -579,7 +579,7 @@
         "degree": 6,
         "world": "minor",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -590,7 +590,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -601,7 +601,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -612,7 +612,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -623,7 +623,7 @@
         "degree": 4,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -634,7 +634,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -645,7 +645,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -656,7 +656,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -667,7 +667,7 @@
         "degree": 1,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -678,7 +678,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -689,7 +689,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -700,7 +700,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     },
     {
@@ -711,7 +711,7 @@
         "degree": 5,
         "world": "major",
         "quality": 1,
-        "octave": 1
+        "octave": 0
       }
     }
   ]

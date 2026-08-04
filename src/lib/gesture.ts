@@ -26,8 +26,27 @@ export function isThumbExtended(lm: Landmark[], side: 'Left' | 'Right'): boolean
   return side === 'Right' ? tip.x > base.x : tip.x < base.x;
 }
 
-export function tiltWorld(lm: Landmark[]): World {
-  return lm[9].x > lm[0].x ? 'minor' : 'major';
+/**
+ * Wrist tilt in [-1, 1] — exact port of their wristTilt (src/music/gestures.ts):
+ * wrist x relative to the middle/ring MCP span with a ±0.12 dead zone, and
+ * the sign INVERTED for the right hand. Used for both the left hand's
+ * major/minor world (tilt >= 0 ⇒ major) and the right hand's filter sweep.
+ */
+export function wristTilt(lm: Landmark[], side: 'Left' | 'Right'): number {
+  if (!lm || lm.length < 18) return 0;
+  const wrist = lm[0];
+  const mid = lm[9];
+  const ring = lm[13];
+  if (!wrist || !mid || !ring) return 0;
+  const left = Math.min(mid.x, ring.x);
+  const right = Math.max(mid.x, ring.x);
+  const dead = 0.12;
+  let t = 0;
+  if (wrist.x < left) t = (wrist.x - left) / dead;
+  else if (wrist.x > right) t = (wrist.x - right) / dead;
+  t = Math.max(-1, Math.min(1, t));
+  if (side === 'Right') t = -t;
+  return t;
 }
 
 export function volumeFromWrist(lm: Landmark[]): number {
@@ -38,15 +57,12 @@ export function volumeFromWrist(lm: Landmark[]): number {
   return 1 - (clamped - lo) / (hi - lo);
 }
 
-export function toneFromWrist(lm: Landmark[]): number {
-  const wrist = lm[0].x;
-  const a = Math.min(lm[9].x, lm[13].x);
-  const b = Math.max(lm[9].x, lm[13].x);
-  const scale = 0.12;
-  let c = 0;
-  if (wrist < a) c = (wrist - a) / scale;
-  else if (wrist > b) c = (wrist - b) / scale;
-  return Math.max(-1, Math.min(1, c));
+/** Exponential pitch map for theremin mode (~65–1200 Hz) — theirs, verbatim. */
+export function pitchFromHandY(lm: Landmark[]): number {
+  const t = volumeFromWrist(lm);
+  const minHz = 65;
+  const maxHz = 1200;
+  return minHz * Math.pow(maxHz / minHz, t);
 }
 
 export function classifyLeft(lm: Landmark[]): LeftHandState | null {
@@ -56,7 +72,8 @@ export function classifyLeft(lm: Landmark[]): LeftHandState | null {
   const ring = isFingerUp(lm, 'ring');
   const pinky = isFingerUp(lm, 'pinky');
   const thumb = isThumbExtended(lm, 'Left');
-  const world = tiltWorld(lm);
+  // Their isMajorMode = wristTilt(left) >= 0 (dead zone included).
+  const world: World = wristTilt(lm, 'Left') >= 0 ? 'major' : 'minor';
   let degree: number | null = null;
   if (index && pinky && !middle && !ring) {
     degree = thumb ? 7 : 6;
@@ -72,13 +89,14 @@ export function classifyRight(lm: Landmark[]): RightHandState | null {
   const quality = (['index', 'middle', 'ring', 'pinky'] as Finger[]).filter((f) =>
     isFingerUp(lm, f),
   ).length;
-  const thumbDown = !isThumbExtended(lm, 'Right');
+  // Their octave: thumb EXTENDED ⇒ notes ÷2 (octave down); folded ⇒ base.
+  const extended = isThumbExtended(lm, 'Right');
   return {
     quality: quality >= 1 && quality <= 4 ? quality : null,
-    thumbDown,
-    octave: thumbDown ? -1 : 1,
+    thumbDown: extended,
+    octave: extended ? -1 : 0,
     volume: volumeFromWrist(lm),
-    tone: toneFromWrist(lm),
+    tone: wristTilt(lm, 'Right'),
   };
 }
 

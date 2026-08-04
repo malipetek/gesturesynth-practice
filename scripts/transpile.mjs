@@ -58,7 +58,9 @@ function mapTarget(chordName, key) {
     );
   }
 
-  return { degree, world, quality, octave: 1 };
+  // Octave 0 = thumb folded (base register), matching gesturesynth.com's
+  // open-source engine (thumb EXTENDED = −1 = down an octave).
+  return { degree, world, quality, octave: 0 };
 }
 
 function parseSong(filePath) {

@@ -35,7 +35,8 @@ export interface GestureTarget {
   world: World;
   /** Right hand finger count 1..4 → chord quality */
   quality: number;
-  /** Right hand thumb octave shift: -1 (down) | 1 (up) */
+  /** Right hand thumb octave (their semantics): 0 = thumb folded (base
+   *  register), -1 = thumb extended (down an octave) */
   octave: number;
 }
 
@@ -74,8 +75,9 @@ export interface LeftHandState {
 export interface RightHandState {
   /** 1..4, or null when no fingers up */
   quality: number | null;
-  /** thumb up = false, thumb down = true */
+  /** thumb extended = octave down (their `thumbDown` = isThumbExtended) */
   thumbDown: boolean;
+  /** 0 = thumb folded (base), -1 = thumb extended (÷2) */
   octave: number;
   /** 0..1 from wrist height */
   volume: number;

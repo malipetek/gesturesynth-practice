@@ -321,7 +321,7 @@ export default function GuidedPlayer({
         ['DEG', DEGREE_LABELS[target.degree], report?.degree],
         ['WORLD', target.world, report?.world],
         ['QUAL', qualityLabel(target.world, target.quality), report?.quality],
-        ['OCT', target.octave > 0 ? '+1' : '−1', report?.octave],
+        ['OCT', target.octave === 0 ? 'base' : '−1', report?.octave],
       ] as [string, string, boolean | undefined][])
     : [];
 
@@ -374,12 +374,12 @@ export default function GuidedPlayer({
               <div className="guide-hand">
                 <HandShape
                   side="right"
-                  fingers={qualityFingers(target.quality, target.octave > 0)}
+                  fingers={qualityFingers(target.quality, target.octave !== 0)}
                   color="rgb(255, 107, 90)"
                 />
                 <p className="hand-caption">
                   <strong>Right</strong> · {qualityLabel(target.world, target.quality)} · thumb{' '}
-                  {target.octave > 0 ? 'up (+1)' : 'down (−1)'}
+                  {target.octave === 0 ? 'in (base)' : 'out (−8ve)'}
                 </p>
               </div>
             </div>
@@ -462,7 +462,7 @@ export default function GuidedPlayer({
                   </span>
                   <span className={`world ${ev.target.world}`}>{ev.target.world}</span>
                   <span className="qual">{qualityLabel(ev.target.world, ev.target.quality)}</span>
-                  <span className="oct">{ev.target.octave > 0 ? '+1' : '−1'}</span>
+                  <span className="oct">{ev.target.octave === 0 ? '·' : '−1'}</span>
                   <span className={`dot ${rec ? (rec.skipped ? 'miss' : 'hit') : ''}`} />
                 </div>
               );

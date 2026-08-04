@@ -768,6 +768,139 @@ kbd {
   background: rgba(61, 255, 224, 0.1);
   border: 1px solid rgba(61, 255, 224, 0.32);
 }
+/* ---------- freeform instrument ---------- */
+
+/* Shared glassmorphism panel (HUD / scale / header in freeform). */
+.glass {
+  background: rgba(12, 18, 24, 0.72);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+}
+
+.free-hud {
+  position: fixed;
+  top: 88px;
+  left: 24px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 20px;
+  border-radius: 14px;
+  min-width: 200px;
+}
+
+.free-chord {
+  font-family: var(--display);
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.free-quality {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.free-meters {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.free-meters label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.free-meter {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(232, 244, 248, 0.12);
+  overflow: hidden;
+}
+
+.free-meter i {
+  display: block;
+  height: 100%;
+  background: var(--mint);
+  transition: width 60ms linear;
+}
+
+.free-meter.tone i {
+  position: absolute;
+  top: -2px;
+  width: 3px;
+  height: 8px;
+  border-radius: 2px;
+  background: var(--coral, #ff6b5a);
+  transform: translateX(-50%);
+  transition: left 60ms linear;
+}
+
+.free-scale {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 30;
+  display: flex;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+
+.free-deg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-width: 44px;
+  padding: 6px 8px;
+  border-radius: 9px;
+  font-size: 0.78rem;
+  color: var(--muted);
+  border: 1px solid transparent;
+}
+
+.free-deg b {
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+}
+
+.free-deg.active {
+  background: rgba(232, 244, 248, 0.1);
+  border-color: currentColor;
+  color: inherit;
+}
+
+/* Specificity bump: .playbar is defined later in this file and would
+   otherwise win the position back to relative/in-flow. */
+.playbar.free-playbar {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 30;
+  border-top: 0;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: rgba(12, 18, 24, 0.72);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+}
+
+.player.freeform {
+  min-height: 100vh;
+}
+
+
 
 .row .world.minor {
   color: var(--coral);

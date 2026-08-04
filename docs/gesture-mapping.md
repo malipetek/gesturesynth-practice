@@ -1,8 +1,11 @@
-# Gesture Mapping — reverse-engineered from gesturesynth.com
+# Gesture Mapping — verified against the open-source repo
 
-Ground truth extracted from the deployed bundle (`/assets/index-5EUKPq8d.js`) so the
-practice app's classifier matches the real instrument. If Gesture Synth changes its
-mapping, this is the file to update (plus `src/lib/gesture.ts`).
+Ground truth is the source repo **github.com/Ekmand/music-synth**
+(`src/music/gestures.ts`, `src/music/chords.ts`, `src/audio/SynthEngine.ts`,
+`src/App.tsx`) — earlier revisions of this doc relied on reverse-engineering the
+minified deployed bundle, which produced two wrong assumptions (octave direction,
+filter-tilt sign) that the source has since corrected. If Gesture Synth changes
+its mapping, this is the file to update (plus `src/lib/gesture.ts`).
 
 ## Finger extension (same for both hands)
 
@@ -23,9 +26,10 @@ the left (landmarks 4 and 3).
 - Degree: count of raised fingers → I (1) … V (5). Special combos:
   - **VI** = index + pinky raised, middle + ring down, thumb down
   - **VII** = index + pinky raised, middle + ring down, thumb up
-- World (major/minor): wrist tilt — `middleMCP.x > wrist.x` ⇒ minor, else major.
-  In the mirrored selfie view this reads as: left-hand fingers leaning **right** ⇒
-  minor, leaning **left** ⇒ major (verified with real-hands testing).
+- World (major/minor): `wristTilt(left) >= 0` ⇒ major — wrist x relative to the
+  middle/ring MCP span with a ±0.12 dead zone (repo-verified). In the mirrored
+  selfie view this reads as: left-hand fingers leaning **right** ⇒ minor,
+  leaning **left** ⇒ major (verified with real-hands testing).
 
 On-screen help text: *"Raise fingers to pick a scale degree (I–V). Index + pinky makes
 VI; add the thumb for VII. By default, tilt flips major ↔ minor."*
@@ -37,9 +41,12 @@ VI; add the thumb for VII. By default, tilt flips major ↔ minor."*
   2. Major 1st inv. / Minor 1st inv.
   3. Major 7th / Minor 7th
   4. Dominant 7th / Diminished 7th
-- Octave: thumb. Thumb down ⇒ one octave down. (Assumption: thumb up = +1, down = −1.)
-- Volume: right wrist height, clamped 0.05–0.95 (top = 1).
-- Tone: right wrist lateral lean relative to middle/ring MCP span (±0.12 x), −1..1.
+- Octave: thumb. **Thumb EXTENDED ⇒ octave down (notes ÷2); thumb folded ⇒ base
+  register** (repo-verified: `if (thumbDown) notes = notes.map(n => n / 2)`,
+  where their `thumbDown` is `isThumbExtended`).
+- Volume: right wrist height, absolute, clamped 0.05–0.95 (top = 1).
+- Tone (filter sweep): `wristTilt(right)` — same span math as the left hand but
+  sign-INVERTED for the right hand (repo-verified); ±1.
 
 ## Chord → gesture target (song transpile step)
 
@@ -50,14 +57,16 @@ Given a chord symbol and the song key (Tonal.js):
 - Quality index:
   - major world: triad=1, first inversion (bass ≠ root)=2, maj7=3, dominant7=4
   - minor world: minor triad=1, first inversion=2, minor7=3, diminished7=4
-- Octave: default +1 (thumb up). Inversions handled via quality, not octave.
+- Octave: default 0 (thumb folded, base register). Inversions handled via
+  quality, not octave.
 
-## Sound engine (verified against the deployed bundle)
+## Sound engine (repo-verified: src/audio/SynthEngine.ts)
 
 The instrument is raw Web Audio — one sawtooth osc per chord note → lowpass
-1200 Hz / Q 0.7 → master gain (WaveShaper present but `curve = null`, a
-passthrough). Chords sustain organ-style while the gesture holds; volume
-follows right-wrist height (50 ms ramp); the filter follows wrist lean:
+1200 Hz / Q 0.7 → master gain → destination (WaveShaper present but
+`curve = null`, a passthrough; **no compressor/limiter anywhere**). Chords
+sustain organ-style while the gesture holds; volume = right-wrist height
+(absolute, clamped 0..1, 50 ms ramp); the filter follows wrist tilt:
 
 - lean < 0: cutoff = 1200 − |t|·950, Q = 0.7 + |t|·1.5
 - lean > 0: cutoff = 1200 + t·3800, Q = 0.7 + t·4.5

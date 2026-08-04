@@ -1,16 +1,26 @@
 /**
- * Faithful port of the Gesture Synth (gesturesynth.com) sound engine,
- * reverse-engineered from the deployed bundle:
+ * Faithful port of the Gesture Synth sound engine — verified against the
+ * open-source repo (github.com/Ekmand/music-synth, src/audio/SynthEngine.ts):
  *
  *   one sawtooth osc per chord note → lowpass 1200 Hz / Q 0.7 → master gain → out
  *
  * Their WaveShaper runs with curve = null (a passthrough), so it is omitted
- * here. The chord is a sustained organ-like voice held while the gesture is
- * held: volume follows right-wrist height, and the lowpass cutoff/resonance
- * follows right-wrist lateral lean:
+ * here. There is NO compressor/limiter anywhere in their chain — the raw
+ * sawtooth sum is part of the sound. The chord is a sustained organ-like
+ * voice held while the gesture is held: volume = right-wrist height
+ * (absolute, clamped 0..1, 50 ms ramp), and the lowpass cutoff/resonance
+ * follows right-wrist tilt (their wristTilt, sign-inverted for right hand):
  *
  *   tilt < 0: freq = 1200 − |tilt|·950, Q = 0.7 + |tilt|·1.5
  *   tilt > 0: freq = 1200 + tilt·3800, Q = 0.7 + tilt·4.5
+ *
+ * Scheduled stabs (demo/backing — a practice-app addition, they don't exist
+ * upstream) share the SAME swept filter through a per-stab envelope, so
+ * listed notes and hand-played notes are the same instrument.
+ *
+ * Theremin mode (their second instrument): sine through the same filter,
+ * pitch = right-hand height (exp 65–1200 Hz), volume = left-hand height
+ * × 0.55.
  *
  * Metronome: all four of their sounds, 'click' at volume 0.25 by default:
  *   click — sine 1000/800 Hz, 60 ms decay
@@ -26,12 +36,6 @@ const FILTER_SMOOTH_S = 0.04;
 const VOLUME_RAMP_S = 0.05;
 const CLICK_LEVEL = 0.25;
 const STAB_ATTACK_S = 0.006;
-// Live-path level staging: four full-amplitude saws sum to ±4, so the wrist
-// gain is scaled to peak ≈ 0.36 at full volume — the same level the
-// scheduled stabs hit — so both paths drive the shared limiter identically
-// (compression IS timbre; mismatched staging made hands vs listed notes
-// sound like different instruments).
-const LIVE_LEVEL = 0.3;
 
 export type MetronomeSound = 'click' | 'wood' | 'beep' | 'hihat';
 
@@ -46,38 +50,26 @@ export function audioContextFromTone(getContext: () => unknown): AudioContext {
 export class GSVoice {
   private readonly sweepFilter: BiquadFilterNode;
   private readonly liveGain: GainNode;
-  private readonly bus: GainNode;
-  private readonly limiter: DynamicsCompressorNode;
   private oscs: OscillatorNode[] = [];
   private currentKey: string | null = null;
+  private thereminOsc: OscillatorNode | null = null;
+  private thereminGain: GainNode | null = null;
   private metroSound: MetronomeSound = 'click';
   private metroVolume = CLICK_LEVEL;
 
   constructor(private readonly ctx: AudioContext) {
-    // Four summed sawtooths can exceed 0 dBFS (worst with bright octave-up
-    // voicings) — a fast limiter keeps the top end from cracking.
-    this.limiter = ctx.createDynamicsCompressor();
-    this.limiter.threshold.value = -10;
-    this.limiter.knee.value = 6;
-    this.limiter.ratio.value = 12;
-    this.limiter.attack.value = 0.002;
-    this.limiter.release.value = 0.12;
-    this.limiter.connect(ctx.destination);
-
-    // ONE shared tone path for everything melodic: live chord and scheduled
-    // stabs both go through the same swept lowpass, so listed notes and
-    // hand-played notes are literally the same instrument.
+    // Their chain: sawtooth oscs → swept lowpass → master gain → destination.
+    // No compressor/limiter — the raw sum is part of the sound. Our stabs
+    // (practice-app addition) tap the same filter through their own envelope
+    // so listed notes and hand-played notes are the same instrument:
     //
     //   live oscs → liveGain (wrist volume) ┐
-    //   stab oscs → per-stab envelope      ─┴→ sweepFilter → bus → limiter
+    //   stab oscs → per-stab envelope      ─┴→ sweepFilter → destination
     this.sweepFilter = ctx.createBiquadFilter();
     this.sweepFilter.type = 'lowpass';
     this.sweepFilter.frequency.value = FILTER_BASE_HZ;
     this.sweepFilter.Q.value = FILTER_BASE_Q;
-    this.bus = ctx.createGain();
-    this.bus.gain.value = 1;
-    this.sweepFilter.connect(this.bus);
-    this.bus.connect(this.limiter);
+    this.sweepFilter.connect(ctx.destination);
     this.liveGain = ctx.createGain();
     this.liveGain.gain.value = 0;
     this.liveGain.connect(this.sweepFilter);
@@ -86,6 +78,7 @@ export class GSVoice {
   /** Sustained chord: one sawtooth per note, swapped only when notes change. */
   playNotes(freqs: number[]): void {
     if (freqs.length === 0) return;
+    this.stopTheremin();
     const key = freqs.map((f) => f.toFixed(1)).join(',');
     if (key === this.currentKey) return;
     this.stopChordOscillators();
@@ -100,13 +93,10 @@ export class GSVoice {
     this.currentKey = key;
   }
 
-  /** Right-wrist height → chord volume (50 ms ramp, staged to stab level). */
+  /** Right-wrist height → chord volume (absolute 0..1, 50 ms ramp — theirs). */
   setVolume(volume: number): void {
     const clamped = Math.max(0, Math.min(1, volume));
-    this.liveGain.gain.linearRampToValueAtTime(
-      clamped * LIVE_LEVEL,
-      this.ctx.currentTime + VOLUME_RAMP_S,
-    );
+    this.liveGain.gain.linearRampToValueAtTime(clamped, this.ctx.currentTime + VOLUME_RAMP_S);
   }
 
   /** Lowpass sweep from right-wrist lateral lean, −1..1. */
@@ -215,6 +205,43 @@ export class GSVoice {
     }
   }
 
+  /** Theremin mode (their second instrument): sine through the shared filter. */
+  playTheremin(freq: number, volume: number): void {
+    this.stopChordOscillators();
+    if (!this.thereminOsc) {
+      this.thereminGain = this.ctx.createGain();
+      this.thereminGain.gain.value = 0;
+      this.thereminOsc = this.ctx.createOscillator();
+      this.thereminOsc.type = 'sine';
+      this.thereminOsc.connect(this.thereminGain);
+      this.thereminGain.connect(this.sweepFilter);
+      this.thereminOsc.start();
+    }
+    const now = this.ctx.currentTime;
+    this.thereminOsc.frequency.setTargetAtTime(Math.max(20, freq), now, 0.03);
+    this.thereminGain!.gain.setTargetAtTime(Math.max(0, Math.min(1, volume)), now, 0.04);
+  }
+
+  stopThereminAudio(): void {
+    this.thereminGain?.gain.setTargetAtTime(0, this.ctx.currentTime, 0.04);
+  }
+
+  private stopTheremin(): void {
+    if (this.thereminOsc) {
+      try {
+        this.thereminOsc.stop();
+      } catch {
+        // already stopped
+      }
+      this.thereminOsc.disconnect();
+      this.thereminOsc = null;
+    }
+    if (this.thereminGain) {
+      this.thereminGain.disconnect();
+      this.thereminGain = null;
+    }
+  }
+
   stopChordOscillators(): void {
     for (const osc of this.oscs) {
       try {
@@ -230,14 +257,13 @@ export class GSVoice {
   stopAll(): void {
     this.setVolume(0);
     this.stopChordOscillators();
+    this.stopTheremin();
   }
 
   dispose(): void {
     this.stopAll();
     this.liveGain.disconnect();
-    this.bus.disconnect();
     this.sweepFilter.disconnect();
-    this.limiter.disconnect();
   }
 
   /** Run a callback after an AudioContext-time deadline (node cleanup). */

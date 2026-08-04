@@ -88,15 +88,10 @@ export function voicingNotes(
       notes = [rootHz, fifth, rootHz * 2, third * 2];
   }
   const mul = Math.pow(2, octaveShift);
-  // The instrument's playable-range guard: anything above 2000 Hz is dropped
-  // down octaves until it fits. Applied here — the single place both the
-  // live (hand-played) and scheduled (listed-note) paths voice through — so
-  // both stay in the same register.
-  return notes.map((f) => {
-    let out = f * mul;
-    while (out > 2000) out /= 2;
-    return out;
-  });
+  // No range clamp: verified against the open-source engine
+  // (github.com/Ekmand/music-synth src/audio/SynthEngine.ts + App.tsx) —
+  // notes play exactly as voiced; octave down is thumb EXTENDED (÷2).
+  return notes.map((f) => f * mul);
 }
 
 export function targetNotes(target: GestureTarget, chordName: string): number[] {

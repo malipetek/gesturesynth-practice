@@ -23,10 +23,10 @@ export const DEGREE_FINGERS: Record<number, FingerSet> = {
   7: { thumb: true, index: true, middle: false, ring: false, pinky: true },
 };
 
-/** Right-hand shape: `quality` fingers from the index out, thumb = octave up. */
-export function qualityFingers(quality: number, octaveUp: boolean): FingerSet {
+/** Right-hand shape: `quality` fingers from the index out, thumb out = octave down (−8ve). */
+export function qualityFingers(quality: number, octaveDown: boolean): FingerSet {
   return {
-    thumb: octaveUp,
+    thumb: octaveDown,
     index: quality >= 1,
     middle: quality >= 2,
     ring: quality >= 3,
