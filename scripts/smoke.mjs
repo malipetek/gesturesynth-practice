@@ -29,7 +29,7 @@ const startBtn = await page.waitForSelector('.start-btn', { timeout: 15000 });
 await startBtn.click();
 
 // switch to Listen-only if the camera is unavailable so scheduling still runs
-const listenBtn = await page.$('.mode-toggle button:nth-child(2)');
+const listenBtn = await page.$('.mode-toggle:not(.flow-toggle) button:nth-child(2)');
 if (listenBtn) {
   await listenBtn.click();
 }

@@ -23,6 +23,14 @@ const VOLUME_RAMP_S = 0.05;
 const CLICK_LEVEL = 0.25;
 const STAB_ATTACK_S = 0.006;
 
+/**
+ * The GSVoice is raw Web Audio but must share Tone's context so scheduled
+ * times line up with the Transport.
+ */
+export function audioContextFromTone(getContext: () => unknown): AudioContext {
+  return (getContext() as { rawContext: AudioContext }).rawContext;
+}
+
 export class GSVoice {
   private readonly sweepFilter: BiquadFilterNode;
   private readonly fixedFilter: BiquadFilterNode;

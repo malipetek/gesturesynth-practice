@@ -50,7 +50,7 @@ await page.goto(`${BASE}/song/${SLUG}`, { waitUntil: 'networkidle2' });
 await page.waitForSelector('.start-btn', { timeout: 15000 });
 
 // headless has no camera → listen-only mode
-await page.click('.mode-toggle button:nth-child(2)');
+await page.click('.mode-toggle:not(.flow-toggle) button:nth-child(2)');
 
 async function runOnce(label) {
   await page.waitForSelector('.screen.idle .start-btn:not([disabled])', { timeout: 15000 });
