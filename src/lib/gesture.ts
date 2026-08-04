@@ -82,6 +82,33 @@ export function classifyRight(lm: Landmark[]): RightHandState | null {
   };
 }
 
+/**
+ * A deliberate 👍 (guided-mode navigation gesture). Much stricter than
+ * "thumb extended + no fingers up", which a sideways hand satisfies:
+ *
+ *  - the thumb must point UP in the image (tip clearly above its base joints),
+ *  - the hand must be roughly upright (wrist→middle-MCP axis more vertical
+ *    than horizontal — rejects sideways hands),
+ *  - all four fingers must be genuinely curled: fingertip nearer the wrist
+ *    than its own PIP joint — a rotation-invariant fold test, unlike the
+ *    tip-vs-PIP height check which horizontal fingers fool.
+ */
+export function isThumbsUp(lm: Landmark[]): boolean {
+  if (lm.length < 21) return false;
+  const wrist = lm[0];
+  const tip = lm[4];
+  if (!(tip.y < lm[3].y - 0.02 && tip.y < lm[2].y - 0.02)) return false;
+  if (!(lm[9].y < wrist.y)) return false;
+  if (Math.abs(lm[9].y - wrist.y) <= Math.abs(lm[9].x - wrist.x)) return false;
+  const curled = (f: Finger) => {
+    const { pip, tip: t } = FINGERS[f];
+    const dTip = Math.hypot(lm[t].x - wrist.x, lm[t].y - wrist.y);
+    const dPip = Math.hypot(lm[pip].x - wrist.x, lm[pip].y - wrist.y);
+    return dTip < dPip;
+  };
+  return (['index', 'middle', 'ring', 'pinky'] as Finger[]).every(curled);
+}
+
 /** Landmark indices of the five fingertips. */
 export const FINGERTIPS: readonly number[] = [4, 8, 12, 16, 20];
 

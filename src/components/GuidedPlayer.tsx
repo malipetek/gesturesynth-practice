@@ -5,7 +5,7 @@ import { DEGREE_LABELS } from '../lib/types';
 import type { TrackingStatus } from '../lib/useHandTracking';
 import { compareFrame, qualityLabel, targetNotes } from '../lib/match';
 import { audioContextFromTone, GSVoice } from '../lib/gsVoice';
-import { isFingerUp, isThumbExtended, type Finger } from '../lib/gesture';
+import { isThumbsUp } from '../lib/gesture';
 import { Tracker, type TrackerBridge } from './Tracker';
 import { DEGREE_FINGERS, HandShape, qualityFingers } from './HandShape';
 import './Player.css';
@@ -228,16 +228,14 @@ export default function GuidedPlayer({
     const loop = () => {
       raf = requestAnimationFrame(loop);
 
-      // 👍 Thumbs-up = skip to the next section. A right hand with the thumb
-      // out and all four fingers folded can never be a chord shape (quality
-      // needs 1–4 fingers), so the gesture is unambiguous.
+      // 👍 Thumbs-up = skip to the next section. isThumbsUp is deliberately
+      // strict (thumb pointing up, hand upright, fingers truly curled) so a
+      // sideways or resting hand never trips it — and a chord shape always
+      // has 1–4 fingers raised, so playing can never look like a thumbs-up.
       const ph = phaseRef.current;
       if (ph === 'stepping' || ph === 'section-done') {
         const rlm = frameBridge.current.landmarksRef?.current?.right ?? null;
-        const up =
-          !!rlm &&
-          isThumbExtended(rlm, 'Right') &&
-          !(['index', 'middle', 'ring', 'pinky'] as Finger[]).some((f) => isFingerUp(rlm, f));
+        const up = !!rlm && isThumbsUp(rlm);
         if (up) {
           if (thumbSinceRef.current === null) thumbSinceRef.current = performance.now();
           const heldMs = performance.now() - thumbSinceRef.current;
