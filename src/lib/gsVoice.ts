@@ -12,8 +12,12 @@
  *   tilt < 0: freq = 1200 − |tilt|·950, Q = 0.7 + |tilt|·1.5
  *   tilt > 0: freq = 1200 + tilt·3800, Q = 0.7 + tilt·4.5
  *
- * Metronome 'click' (their default): sine 1000 Hz (accent) / 800 Hz (normal),
- * 60 ms exponential decay, level 0.25 × (accent ? 1 : 0.7).
+ * Metronome: all four of their sounds, 'click' at volume 0.25 by default:
+ *   click — sine 1000/800 Hz, 60 ms decay
+ *   wood  — triangle 1800/1400 → 200 Hz in 20 ms, 35 ms decay
+ *   beep  — square 880/660 Hz, gain × 0.4, 50 ms decay
+ *   hihat — squares [4000,6500,9000] / [5000,7500], gain × 0.35, 80/40 ms decay
+ * All scaled by volume × (accent ? 1 : 0.7).
  */
 
 const FILTER_BASE_HZ = 1200;
@@ -22,6 +26,8 @@ const FILTER_SMOOTH_S = 0.04;
 const VOLUME_RAMP_S = 0.05;
 const CLICK_LEVEL = 0.25;
 const STAB_ATTACK_S = 0.006;
+
+export type MetronomeSound = 'click' | 'wood' | 'beep' | 'hihat';
 
 /**
  * The GSVoice is raw Web Audio but must share Tone's context so scheduled
@@ -37,6 +43,8 @@ export class GSVoice {
   private readonly master: GainNode;
   private oscs: OscillatorNode[] = [];
   private currentKey: string | null = null;
+  private metroSound: MetronomeSound = 'click';
+  private metroVolume = CLICK_LEVEL;
 
   constructor(private readonly ctx: AudioContext) {
     // Live path: oscillators → swept filter → master (wrist volume) → out
@@ -118,19 +126,71 @@ export class GSVoice {
     this.after(end + 0.1, () => gain.disconnect());
   }
 
-  /** Metronome click, exactly their 'click' sound. */
+  /** Metronome settings (their defaults: 'click', 0.25). */
+  setMetronome(sound: MetronomeSound, volume: number): void {
+    this.metroSound = sound;
+    this.metroVolume = Math.max(0, Math.min(1, volume));
+  }
+
+  /** Metronome tick — their four sounds, ported 1:1. */
   click(time: number, accent: boolean): void {
-    const osc = this.ctx.createOscillator();
-    osc.type = 'sine';
-    osc.frequency.value = accent ? 1000 : 800;
+    const level = this.metroVolume * (accent ? 1 : 0.7);
     const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(CLICK_LEVEL * (accent ? 1 : 0.7), time);
-    gain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
-    osc.connect(gain);
     gain.connect(this.ctx.destination);
-    osc.start(time);
-    osc.stop(time + 0.07);
-    this.after(time + 0.2, () => gain.disconnect());
+    const cleanup = () => gain.disconnect();
+    switch (this.metroSound) {
+      case 'wood': {
+        const osc = this.ctx.createOscillator();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(accent ? 1800 : 1400, time);
+        osc.frequency.exponentialRampToValueAtTime(200, time + 0.02);
+        gain.gain.setValueAtTime(level, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.035);
+        osc.connect(gain);
+        osc.start(time);
+        osc.stop(time + 0.04);
+        this.after(time + 0.2, cleanup);
+        break;
+      }
+      case 'beep': {
+        const osc = this.ctx.createOscillator();
+        osc.type = 'square';
+        osc.frequency.value = accent ? 880 : 660;
+        gain.gain.setValueAtTime(level * 0.4, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.05);
+        osc.connect(gain);
+        osc.start(time);
+        osc.stop(time + 0.06);
+        this.after(time + 0.2, cleanup);
+        break;
+      }
+      case 'hihat': {
+        const freqs = accent ? [4000, 6500, 9000] : [5000, 7500];
+        gain.gain.setValueAtTime(level * 0.35, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + (accent ? 0.08 : 0.04));
+        for (const f of freqs) {
+          const osc = this.ctx.createOscillator();
+          osc.type = 'square';
+          osc.frequency.value = f;
+          osc.connect(gain);
+          osc.start(time);
+          osc.stop(time + 0.09);
+        }
+        this.after(time + 0.25, cleanup);
+        break;
+      }
+      default: {
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = accent ? 1000 : 800;
+        gain.gain.setValueAtTime(level, time);
+        gain.gain.exponentialRampToValueAtTime(0.001, time + 0.06);
+        osc.connect(gain);
+        osc.start(time);
+        osc.stop(time + 0.07);
+        this.after(time + 0.2, cleanup);
+      }
+    }
   }
 
   stopChordOscillators(): void {

@@ -20,13 +20,10 @@ if (!song) {
 >
 	<section class="song-header container">
 		<a class="back muted" href="/">&#8592; Songbook</a>
-		<h1>{song.title}</h1>
-		<p class="song-artist-lg">{song.artist}</p>
-		<div class="song-chips">
-			<span class="tag"><span class="dot">&#9679;</span> {song.key}</span>
-			<span class="tag">{song.bpm} BPM</span>
-			<span class="tag">{song.timeSignature.join('/')}</span>
-		</div>
+		<!-- Title/artist/key/BPM live in the Player's own header; keep an h1 for semantics. -->
+		<h1 class="visually-hidden">
+			{song.title} — {song.artist}
+		</h1>
 	</section>
 
 	<section class="song-stage container">

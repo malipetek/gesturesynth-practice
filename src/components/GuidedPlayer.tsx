@@ -3,7 +3,7 @@ import * as Tone from 'tone';
 import type { GestureTarget, MatchReport, Song, SongEvent } from '../lib/types';
 import { DEGREE_LABELS } from '../lib/types';
 import type { TrackingStatus } from '../lib/useHandTracking';
-import { compareFrame, chordNotes, qualityLabel } from '../lib/match';
+import { compareFrame, qualityLabel, targetNotes } from '../lib/match';
 import { audioContextFromTone, GSVoice } from '../lib/gsVoice';
 import { Tracker, type TrackerBridge } from './Tracker';
 import { DEGREE_FINGERS, HandShape, qualityFingers } from './HandShape';
@@ -219,7 +219,7 @@ export default function GuidedPlayer({ song, onExit }: { song: Song; onExit: () 
       if (!voice) return;
       if (frame?.right) voice.updateFilterSweep(frame.right.tone);
       if (rep && rep.score >= 1 && cur) {
-        voice.playNotes(chordNotes(cur.ev.chordName, cur.ev.target.octave));
+        voice.playNotes(targetNotes(cur.ev.target, cur.ev.chordName));
         voice.setVolume(frame?.right?.volume ?? 0.5);
         if (holdSinceRef.current === null) {
           holdSinceRef.current = performance.now();

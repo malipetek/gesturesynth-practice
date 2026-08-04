@@ -52,6 +52,44 @@ Given a chord symbol and the song key (Tonal.js):
   - minor world: minor triad=1, first inversion=2, minor7=3, diminished7=4
 - Octave: default +1 (thumb up). Inversions handled via quality, not octave.
 
+## Sound engine (verified against the deployed bundle)
+
+The instrument is raw Web Audio — one sawtooth osc per chord note → lowpass
+1200 Hz / Q 0.7 → master gain (WaveShaper present but `curve = null`, a
+passthrough). Chords sustain organ-style while the gesture holds; volume
+follows right-wrist height (50 ms ramp); the filter follows wrist lean:
+
+- lean < 0: cutoff = 1200 − |t|·950, Q = 0.7 + |t|·1.5
+- lean > 0: cutoff = 1200 + t·3800, Q = 0.7 + t·4.5
+
+### Voicings (their exact note tables)
+
+Root = key table (C4 = 261.63 …), third = root·2^((major?4:3)/12), fifth = +7:
+
+- Q1 triad: `[root, fifth, root·2, third·2]` (open voicing)
+- Q2 1st inv: `[third, fifth, root·2, third·2]`
+- Q3: major `[root, third, fifth, +11]` (maj7) · minor `[root, third, fifth, +10]` (m7)
+- Q4: major `[root, third, fifth, +10]` (dom7) · minor `[root, third, +6, +9]` (dim7)
+
+Degree roots within the key: `{1:0, 2:2, 3:4, 4:5, 5:7, 6:9, 7:-1}` semitones
+(VII sits a semitone *below* the tonic). Octave down = all freqs ÷ 2.
+
+### Metronome (4 sounds, default `click` @ 0.25)
+
+- click: sine 1000/800 Hz, 60 ms decay
+- wood: triangle 1800/1400 → 200 Hz in 20 ms, 35 ms decay
+- beep: square 880/660, gain ×0.4, 50 ms decay
+- hihat: squares [4000,6500,9000] / [5000,7500], gain ×0.35, 80/40 ms decay
+
+### Their app settings (defaults = what we adopt)
+
+`localStorage['music-synth-gesture-settings']`:
+`{ modeControl: 'tilt', fixedMode: 'major', qualityControl: 'fingers', fixedQuality: 1 }`.
+Left hand: tilt vs lock mode (lock = fingers pick degree only, major/minor set
+in UI). Right hand: finger count vs locked chord style. These locks conflict
+with per-chord practice targets, so the practice app exposes only the
+metronome sound/volume (`localStorage['gs-practice-settings']`).
+
 ## Open assumptions (verify against the real site when possible)
 
 - Thumb-up octave sign (+1) and whether base octave is 0 or +1.

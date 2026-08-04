@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
 import * as Tone from 'tone';
-import { audioContextFromTone, GSVoice } from '../lib/gsVoice';
-import { compareFrame, chordNotes, qualityLabel } from '../lib/match';
+import { audioContextFromTone, GSVoice, type MetronomeSound } from '../lib/gsVoice';
+import { compareFrame, qualityLabel, symbolTriadNotes, targetNotes } from '../lib/match';
+import { loadSettings, saveSettings, type PracticeSettings } from '../lib/settings';
 import { Tracker, type TrackerBridge } from './Tracker';
 import GuidedPlayer from './GuidedPlayer';
+import { DEGREE_FINGERS, HandShape, qualityFingers } from './HandShape';
 import type { MatchReport, Song, SongEvent } from '../lib/types';
 import { DEGREE_LABELS } from '../lib/types';
 import './Player.css';
@@ -160,10 +162,10 @@ function schedulePlayback(
     }, b * spb);
   }
 
-  // Backing pad, one chord per bar.
+  // Backing pad, one chord per bar (Gesture Synth open-voicing triad).
   const barChords = computeBarChords(song);
   for (let bar = 1; bar <= maxBar; bar++) {
-    const notes = chordNotes(barChords[bar - 1]);
+    const notes = symbolTriadNotes(barChords[bar - 1]);
     const duration = spb * beatsPerBar * 2.2;
     tp.schedule((time) => {
       voice.stab(notes, time, duration, 0.12);
@@ -177,7 +179,7 @@ function schedulePlayback(
     const t = barBeatTime(ev.bar, ev.beat);
     tp.schedule((time) => {
       if (listenOnly) {
-        voice.stab(chordNotes(ev.chordName, ev.target.octave), time, spb * beatsPerBar, 0.35);
+        voice.stab(targetNotes(ev.target, ev.chordName), time, spb * beatsPerBar, 0.35);
       }
       const frame = listenOnly ? null : frameBridge.current.frameRef?.current ?? null;
       const report = compareFrame(frame, ev.target);
@@ -270,6 +272,15 @@ export default function Player({ song }: { song: Song }) {
   const [state, dispatch] = useReducer(reducer, undefined, makeInitial);
   const [trackingStatus, setTrackingStatus] = useState<TrackingStatus>('idle');
   const [trackingError, setTrackingError] = useState<string | null>(null);
+  // Sound settings (Gesture Synth defaults: click metronome at 25%).
+  const [settings, setSettings] = useState<PracticeSettings>(loadSettings);
+  const [soundOpen, setSoundOpen] = useState(false);
+  const settingsRef = useRef(settings);
+  useEffect(() => {
+    settingsRef.current = settings;
+    voiceRef.current?.setMetronome(settings.metroSound, settings.metroVolume);
+    saveSettings(settings);
+  }, [settings]);
   // Practice flow: guided = step through short sections at your own pace
   // (default, easiest); timed = full song with the backing track.
   const [flow, setFlow] = useState<'guided' | 'timed'>('guided');
@@ -343,7 +354,7 @@ export default function Player({ song }: { song: Song }) {
           const ev = song.events[idx];
           const report = compareFrame(frame, ev.target);
           if (report && report.score >= 1) {
-            voice.playNotes(chordNotes(ev.chordName, ev.target.octave));
+            voice.playNotes(targetNotes(ev.target, ev.chordName));
             voice.setVolume(frame?.right?.volume ?? 0.5);
           } else {
             voice.setVolume(0);
@@ -375,6 +386,7 @@ export default function Player({ song }: { song: Song }) {
       audioUnlockedRef.current = true;
       try {
         const voice = (voiceRef.current ??= new GSVoice(audioContextFromTone(() => Tone.getContext())));
+        voice.setMetronome(settingsRef.current.metroSound, settingsRef.current.metroVolume);
         dispatch({ type: 'START' });
         schedulePlayback(song, listenOnly, voice, dispatch, frameBridge, activeIndexAtBeat);
       } catch {
@@ -441,8 +453,10 @@ export default function Player({ song }: { song: Song }) {
     );
   }
 
-  const activeTarget =
-    state.activeIndex >= 0 ? song.events[state.activeIndex].target : null;
+  const activeEv = state.activeIndex >= 0 ? song.events[state.activeIndex] : null;
+  const activeTarget = activeEv ? activeEv.target : null;
+  // Next chord to prepare for (during count-in this is the first chord).
+  const nextEv = song.events[state.activeIndex + 1] ?? null;
 
   const canStart = state.mode === 'listen' || trackingStatus === 'ready';
 
@@ -621,7 +635,8 @@ export default function Player({ song }: { song: Song }) {
             </div>
           </section>
 
-          <div className="chart" ref={chartRef}>
+          <div className="rail">
+            <div className="chart" ref={chartRef}>
             {bars.map((grp) => (
               <div className="bar" key={grp.bar}>
                 <div className="bar-label">Bar {grp.bar}</div>
@@ -653,7 +668,50 @@ export default function Player({ song }: { song: Song }) {
                 </div>
               </div>
             ))}
-          </div>
+            </div>
+
+          {state.mode === 'track' && (activeEv || nextEv) && (
+            <div className="timed-hands">
+              {activeEv && activeTarget && (
+                <div className="timed-group">
+                  <span className="timed-label">Now · {activeEv.chordName}</span>
+                  <div className="timed-pair">
+                    <HandShape
+                      side="left"
+                      fingers={DEGREE_FINGERS[activeTarget.degree]}
+                      tiltDeg={activeTarget.world === 'minor' ? 18 : -18}
+                      color={`var(--deg-${activeTarget.degree})`}
+                    />
+                    <HandShape
+                      side="right"
+                      fingers={qualityFingers(activeTarget.quality, activeTarget.octave > 0)}
+                      color="rgb(255, 107, 90)"
+                    />
+                  </div>
+                </div>
+              )}
+              {nextEv && (
+                <div className="timed-group next">
+                  <span className="timed-label">
+                    {activeEv ? 'Next' : 'First'} · {nextEv.chordName}
+                  </span>
+                  <div className="timed-pair">
+                    <HandShape
+                      side="left"
+                      fingers={DEGREE_FINGERS[nextEv.target.degree]}
+                      tiltDeg={nextEv.target.world === 'minor' ? 18 : -18}
+                      color={`var(--deg-${nextEv.target.degree})`}
+                    />
+                    <HandShape
+                      side="right"
+                      fingers={qualityFingers(nextEv.target.quality, nextEv.target.octave > 0)}
+                      color="rgb(255, 107, 90)"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="playbar">
             <button type="button" className="stop-btn" onClick={stop}>
@@ -663,6 +721,51 @@ export default function Player({ song }: { song: Song }) {
             <span className="stats">
               {state.hits}/{total} hits · combo {state.combo} (best {state.bestCombo})
             </span>
+            <div className="sound-settings">
+              <button
+                type="button"
+                className={`sound-btn${soundOpen ? ' open' : ''}`}
+                onClick={() => setSoundOpen((o) => !o)}
+                aria-expanded={soundOpen}
+              >
+                Sound
+              </button>
+              {soundOpen && (
+                <div className="sound-pop">
+                  <label className="sound-row">
+                    <span>Metronome</span>
+                    <select
+                      value={settings.metroSound}
+                      onChange={(e) =>
+                        setSettings((s) => ({
+                          ...s,
+                          metroSound: e.target.value as MetronomeSound,
+                        }))
+                      }
+                    >
+                      <option value="click">Click</option>
+                      <option value="wood">Wood</option>
+                      <option value="beep">Beep</option>
+                      <option value="hihat">Hi-hat</option>
+                    </select>
+                  </label>
+                  <label className="sound-row">
+                    <span>Volume</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={Math.round(settings.metroVolume * 100)}
+                      onChange={(e) =>
+                        setSettings((s) => ({ ...s, metroVolume: Number(e.target.value) / 100 }))
+                      }
+                    />
+                    <span className="sound-val">{Math.round(settings.metroVolume * 100)}%</span>
+                  </label>
+                </div>
+              )}
+            </div>
+          </div>
           </div>
         </div>
       )}

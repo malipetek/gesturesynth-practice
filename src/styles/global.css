@@ -303,7 +303,7 @@ a.card:hover {
 }
 
 .song-header {
-  padding-block: 2.5rem 0.5rem;
+  padding-block: 0.75rem 0;
 }
 
 .song-header .back {
@@ -329,7 +329,19 @@ a.card:hover {
 }
 
 .song-stage {
-  margin-top: 1.5rem;
+  margin-top: 0.75rem;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 .empty {
