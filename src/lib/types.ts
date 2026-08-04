@@ -57,6 +57,8 @@ export interface Song {
   key: string;
   bpm: number;
   timeSignature: [number, number];
+  /** Editorial position in the songbook (lower = higher up); unset sorts last, by title */
+  order?: number;
   /** Sorted by (bar, beat) */
   events: SongEvent[];
 }

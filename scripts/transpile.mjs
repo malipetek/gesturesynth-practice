@@ -43,7 +43,9 @@ function mapTarget(chordName, key) {
   else if (inverted) quality = 2;
   else quality = 1;
 
-  const tonic = Note.chroma(key);
+  // Keys may carry a minor suffix ("Em", "Bbm") — chroma wants the bare root.
+  const keyRoot = key.match(/^([A-G][#b]?)/)?.[1] ?? key;
+  const tonic = Note.chroma(keyRoot);
   const rootChroma = Note.chroma(root);
   const semis = (rootChroma - tonic + 12) % 12;
   let degree = MAJOR_SCALE.indexOf(semis) + 1;
@@ -70,7 +72,7 @@ function parseSong(filePath) {
   for (const rawLine of raw.split(/\r?\n/)) {
     const line = rawLine.trim();
     if (!line) continue;
-    const directive = line.match(/^\{(title|artist|key|tempo|time):\s*(.+)\}$/i);
+    const directive = line.match(/^\{(title|artist|key|tempo|time|order):\s*(.+)\}$/i);
     if (directive) {
       const [, key, value] = directive;
       const v = value.trim();
@@ -86,6 +88,9 @@ function parseSong(filePath) {
           break;
         case 'tempo':
           meta.tempo = Number.parseInt(v, 10);
+          break;
+        case 'order':
+          meta.order = Number.parseInt(v, 10);
           break;
         case 'time': {
           const [n, d] = v.split('/').map((s) => Number.parseInt(s, 10));
@@ -164,6 +169,7 @@ function main() {
       key: meta.key,
       bpm: meta.tempo,
       timeSignature: meta.time,
+      ...(Number.isFinite(meta.order) ? { order: meta.order } : {}),
       events,
     };
 

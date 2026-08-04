@@ -3,7 +3,10 @@ import Layout from '../layouts/Layout.astro';
 import { getSongs } from '../lib/songs';
 import type { Song } from '../lib/types';
 
-const songList = [...getSongs()].sort((a, b) => a.title.localeCompare(b.title));
+// Editorial order first (hit pieces up top), then everything else by title.
+const songList = [...getSongs()].sort(
+	(a, b) => (a.order ?? 1000) - (b.order ?? 1000) || a.title.localeCompare(b.title),
+);
 
 const barCount = (song: Song) => song.events.reduce((max, e) => Math.max(max, e.bar), 0);
 ---
