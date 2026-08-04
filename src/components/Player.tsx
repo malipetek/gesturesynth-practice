@@ -6,6 +6,7 @@ import { Chord, Note } from 'tonal';
 import { useHandTracking } from '../lib/useHandTracking';
 import { FINGERTIPS, HAND_CONNECTIONS } from '../lib/gesture';
 import type { HandLandmarks, Landmark } from '../lib/gesture';
+import { GSVoice } from '../lib/gsVoice';
 import type {
   GestureTarget,
   HandFrame,
@@ -145,46 +146,10 @@ function qualityLabel(world: World, quality: number): string {
   return QUALITY_LABELS[world][quality as QualityKey];
 }
 
-interface Instruments {
-  pad: Tone.PolySynth;
-  metronome: Tone.PolySynth;
-  chord: Tone.PolySynth;
-  padReverb: Tone.Reverb;
-  chordReverb: Tone.Reverb;
-  clickFilter: Tone.Filter;
-}
-
-function buildInstruments(): Instruments {
-  const padReverb = new Tone.Reverb({ decay: 3.2, preDelay: 0.01, wet: 0.4 }).toDestination();
-  const pad = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: 'triangle' },
-    envelope: { attack: 0.05, decay: 0.5, sustain: 0.6, release: 2.8 },
-  }).connect(padReverb);
-  pad.maxPolyphony = 64;
-  pad.volume.value = -16;
-
-  const clickFilter = new Tone.Filter({ type: 'bandpass', frequency: 1800, Q: 1.2 }).toDestination();
-  // PolySynth so every click is a fresh voice: a NoiseSynth re-starts one
-  // shared noise source per click, and if two clicks ever fire late in the
-  // same tick their clamped start times collide and Tone throws
-  // ("Start time must be strictly greater than previous start time").
-  const metronome = new Tone.PolySynth(Tone.Synth, {
-    oscillator: { type: 'sine' },
-    envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.02 },
-  }).connect(clickFilter);
-  metronome.maxPolyphony = 8;
-  metronome.volume.value = -20;
-
-  const chordReverb = new Tone.Reverb({ decay: 2.6, preDelay: 0.01, wet: 0.35 }).toDestination();
-  const chord = new Tone.PolySynth(Tone.FMSynth, {
-    harmonicity: 3,
-    modulationIndex: 2,
-    envelope: { attack: 0.005, decay: 0.4, sustain: 0.35, release: 1.6 },
-  }).connect(chordReverb);
-  chord.maxPolyphony = 64;
-  chord.volume.value = -6;
-
-  return { pad, metronome, chord, padReverb, chordReverb, clickFilter };
+function audioContextFromTone(): AudioContext {
+  // The GSVoice is raw Web Audio but must share Tone's context so scheduled
+  // times line up with the Transport.
+  return (Tone.getContext() as unknown as { rawContext: AudioContext }).rawContext;
 }
 
 function computeBarChords(song: Song): string[] {
@@ -221,7 +186,7 @@ function computeActiveIndexes(song: Song, countinBeats: number, beatsPerBar: num
 function schedulePlayback(
   song: Song,
   listenOnly: boolean,
-  instruments: Instruments,
+  voice: GSVoice,
   dispatch: (a: Action) => void,
   frameBridge: MutableRefObject<TrackerBridge>,
   activeIndexAtBeat: number[],
@@ -251,7 +216,7 @@ function schedulePlayback(
   for (let b = 0; b < totalBeats; b++) {
     tp.schedule((time) => {
       const accent = b % beatsPerBar === 0;
-      instruments.metronome.triggerAttackRelease(accent ? 2093 : 1568, '16n', time, accent ? 0.7 : 0.35);
+      voice.click(time, accent);
       draw.schedule(() => {
         const activeIdx = activeIndexAtBeat[b];
         const target = activeIdx >= 0 ? song.events[activeIdx].target : null;
@@ -269,7 +234,7 @@ function schedulePlayback(
     const notes = chordNotes(barChords[bar - 1]);
     const duration = spb * beatsPerBar * 2.2;
     tp.schedule((time) => {
-      instruments.pad.triggerAttackRelease(notes, duration, time, 0.5);
+      voice.stab(notes, time, duration, 0.12);
     }, barBeatTime(bar, 1));
   }
 
@@ -280,12 +245,7 @@ function schedulePlayback(
     const t = barBeatTime(ev.bar, ev.beat);
     tp.schedule((time) => {
       if (listenOnly) {
-        instruments.chord.triggerAttackRelease(
-          chordNotes(ev.chordName, ev.target.octave),
-          '1m',
-          time,
-          0.35,
-        );
+        voice.stab(chordNotes(ev.chordName, ev.target.octave), time, spb * beatsPerBar, 0.35);
       }
       const frame = listenOnly ? null : frameBridge.current.frameRef?.current ?? null;
       const report = compareFrame(frame, ev.target);
@@ -498,7 +458,7 @@ export default function Player({ song }: { song: Song }) {
   }, [trackingStatus]);
 
   const frameBridge = useRef<TrackerBridge>({ frameRef: null, videoRef: null, landmarksRef: null });
-  const instrumentsRef = useRef<Instruments | null>(null);
+  const voiceRef = useRef<GSVoice | null>(null);
   const audioUnlockedRef = useRef(false);
   const sessionActiveRef = useRef(false);
   const isStartingRef = useRef(false);
@@ -514,16 +474,8 @@ export default function Player({ song }: { song: Song }) {
       } catch {
         // ignore Tone teardown errors on unmount
       }
-      if (instrumentsRef.current) {
-        const i = instrumentsRef.current;
-        i.pad.dispose();
-        i.metronome.dispose();
-        i.chord.dispose();
-        i.padReverb.dispose();
-        i.chordReverb.dispose();
-        i.clickFilter.dispose();
-        instrumentsRef.current = null;
-      }
+      voiceRef.current?.dispose();
+      voiceRef.current = null;
     },
     [],
   );
@@ -538,39 +490,40 @@ export default function Player({ song }: { song: Song }) {
       state.activeIndex >= 0 ? song.events[state.activeIndex].target : null;
   }, [state.currentReport, state.activeIndex, song]);
 
-  // Edge-triggered chord stab: the instant both hands fully match the active
-  // target, the chord rings out — the instrument responds immediately instead
-  // of only on beat ticks. Latch resets when the match is broken so the same
-  // chord can be replayed.
-  const stabLatchRef = useRef(-1);
+  // Live Gesture Synth behavior: while both hands fully match the active
+  // target the chord sustains (sawtooth through the swept lowpass), volume
+  // follows right-wrist height, and the filter follows right-wrist lean —
+  // exactly like the real instrument. Anything less than a full match is
+  // silent.
   useEffect(() => {
     if (state.phase !== 'playing' || state.mode !== 'track') return;
     let raf = 0;
     const loop = () => {
-      const idx = stateRef.current.activeIndex;
-      if (idx >= 0) {
-        const ev = song.events[idx];
+      const voice = voiceRef.current;
+      if (voice) {
+        const idx = stateRef.current.activeIndex;
         const frame = frameBridge.current.frameRef?.current ?? null;
-        const report = compareFrame(frame, ev.target);
-        if (report && report.score >= 1) {
-          if (stabLatchRef.current !== idx) {
-            stabLatchRef.current = idx;
-            const velocity = 0.1 + (frame?.right?.volume ?? 0.5) * 0.4;
-            instrumentsRef.current?.chord.triggerAttackRelease(
-              chordNotes(ev.chordName, ev.target.octave),
-              '1m',
-              Tone.now(),
-              velocity,
-            );
+        if (frame?.right) voice.updateFilterSweep(frame.right.tone);
+        if (idx >= 0) {
+          const ev = song.events[idx];
+          const report = compareFrame(frame, ev.target);
+          if (report && report.score >= 1) {
+            voice.playNotes(chordNotes(ev.chordName, ev.target.octave));
+            voice.setVolume(frame?.right?.volume ?? 0.5);
+          } else {
+            voice.setVolume(0);
           }
-        } else if (stabLatchRef.current === idx) {
-          stabLatchRef.current = -1;
+        } else {
+          voice.setVolume(0);
         }
       }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      cancelAnimationFrame(raf);
+      voiceRef.current?.stopAll();
+    };
   }, [state.phase, state.mode, song]);
 
   const start = useCallback(() => {
@@ -578,7 +531,6 @@ export default function Player({ song }: { song: Song }) {
     isStartingRef.current = true;
     sessionActiveRef.current = true;
     const listenOnly = stateRef.current.mode === 'listen';
-    const instruments = (instrumentsRef.current ??= buildInstruments());
     void (async () => {
       try {
         await Tone.start();
@@ -587,8 +539,9 @@ export default function Player({ song }: { song: Song }) {
       }
       audioUnlockedRef.current = true;
       try {
+        const voice = (voiceRef.current ??= new GSVoice(audioContextFromTone()));
         dispatch({ type: 'START' });
-        schedulePlayback(song, listenOnly, instruments, dispatch, frameBridge, activeIndexAtBeat);
+        schedulePlayback(song, listenOnly, voice, dispatch, frameBridge, activeIndexAtBeat);
       } catch {
         sessionActiveRef.current = false;
       } finally {
@@ -601,6 +554,7 @@ export default function Player({ song }: { song: Song }) {
     // No early return on the session flag: after a song finishes on its own
     // the flag is already false, but "Practice again" must still reset to idle.
     sessionActiveRef.current = false;
+    voiceRef.current?.stopAll();
     try {
       const tp = Tone.getTransport();
       tp.stop();

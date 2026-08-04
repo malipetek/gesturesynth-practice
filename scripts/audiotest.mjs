@@ -30,6 +30,16 @@ const browser = await puppeteer.launch({
 });
 const page = await browser.newPage();
 await page.setViewport({ width: 1280, height: 900 });
+// Count every oscillator start in the page: proves sound is actually produced
+// (twinkle ≈ 36 clicks + 8 pad stabs ×3 notes + 32 chord stabs ×3 notes = 156).
+await page.evaluateOnNewDocument(() => {
+  window.__oscStarts = 0;
+  const orig = OscillatorNode.prototype.start;
+  OscillatorNode.prototype.start = function (...args) {
+    window.__oscStarts++;
+    return orig.apply(this, args);
+  };
+});
 const logs = [];
 page.on('console', (m) => {
   if (m.type() === 'error') logs.push('[err] ' + m.text());
@@ -69,6 +79,11 @@ async function runOnce(label) {
 }
 
 await runOnce('run 1');
+const oscStarts = await page.evaluate(() => window.__oscStarts);
+console.log(`oscillator starts after run 1: ${oscStarts}`);
+if (oscStarts < 100) {
+  throw new Error(`suspiciously few oscillator starts (${oscStarts}) — sound engine not producing`);
+}
 await runOnce('run 2');
 
 console.log('console errors:', logs.length ? logs.join('\n') : '(none)');
