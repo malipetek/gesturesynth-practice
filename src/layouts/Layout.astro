@@ -1,0 +1,38 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  description?: string;
+}
+
+const { title, description } = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<meta name="description" content={description ?? 'Learn to play songs on Gesture Synth, one chord gesture at a time.'} />
+		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+		<link rel="icon" href="/favicon.ico" />
+		<title>{title}</title>
+	</head>
+	<body>
+		<header class="site-header">
+			<div class="container">
+				<a class="brand" href="/">Gesture Synth Practice</a>
+			</div>
+		</header>
+		<main>
+			<slot />
+		</main>
+		<footer class="site-footer">
+			<div class="container">
+				<p class="muted">Practice every chord gesture until it feels like second nature.</p>
+				<a class="muted" href="https://www.gesturesynth.com">Powered by Gesture Synth</a>
+			</div>
+		</footer>
+	</body>
+</html>

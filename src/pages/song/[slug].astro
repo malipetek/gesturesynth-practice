@@ -1,0 +1,35 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import Player from '../../components/Player';
+import { getSongs } from '../../lib/songs';
+
+export function getStaticPaths() {
+	return getSongs().map((song) => ({ params: { slug: song.slug } }));
+}
+
+const song = getSongs().find((s) => s.slug === Astro.params.slug);
+
+if (!song) {
+	return Astro.redirect('/');
+}
+---
+
+<Layout
+	title={`${song.title} — ${song.artist} | Gesture Synth Practice`}
+	description={`Practice ${song.title} by ${song.artist} on Gesture Synth.`}
+>
+	<section class="song-header container">
+		<a class="back muted" href="/">&#8592; Songbook</a>
+		<h1>{song.title}</h1>
+		<p class="song-artist-lg">{song.artist}</p>
+		<div class="song-chips">
+			<span class="tag"><span class="dot">&#9679;</span> {song.key}</span>
+			<span class="tag">{song.bpm} BPM</span>
+			<span class="tag">{song.timeSignature.join('/')}</span>
+		</div>
+	</section>
+
+	<section class="song-stage container">
+		<Player song={song} client:only="react" />
+	</section>
+</Layout>

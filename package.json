@@ -6,12 +6,28 @@
     "node": ">=22.12.0"
   },
   "scripts": {
+    "predev": "node scripts/transpile.mjs",
     "dev": "astro dev",
+    "prebuild": "node scripts/transpile.mjs",
     "build": "astro build",
     "preview": "astro preview",
+    "deploy": "npm run build && wrangler deploy",
+    "deploy:dry": "npm run build && wrangler deploy --dry-run",
     "astro": "astro"
   },
   "dependencies": {
-    "astro": "^7.1.6"
+    "@astrojs/react": "^6.0.2",
+    "@mediapipe/tasks-vision": "^1.0.1",
+    "astro": "^7.1.6",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8",
+    "tonal": "^6.4.3",
+    "tone": "^15.1.22"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-dom": "^19.2.4",
+    "puppeteer-core": "^25.4.0",
+    "wrangler": "^4.118.0"
   }
 }

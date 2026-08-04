@@ -1,0 +1,409 @@
+{
+  "slug": "amazing-grace",
+  "title": "Amazing Grace",
+  "artist": "Traditional",
+  "key": "G",
+  "bpm": 70,
+  "timeSignature": [
+    3,
+    4
+  ],
+  "events": [
+    {
+      "bar": 1,
+      "beat": 1,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 1,
+      "beat": 2,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 1,
+      "beat": 3,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 1,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 2,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 3,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 1,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 2,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 3,
+      "chordName": "D",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 1,
+      "chordName": "D",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 2,
+      "chordName": "D",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 3,
+      "chordName": "D",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 1,
+      "chordName": "Em",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 2,
+      "chordName": "Em",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 3,
+      "chordName": "Em",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 1,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 2,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 3,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 1,
+      "chordName": "C",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 2,
+      "chordName": "C",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 3,
+      "chordName": "C",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 1,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 2,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 3,
+      "chordName": "D",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 9,
+      "beat": 1,
+      "chordName": "D",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 9,
+      "beat": 2,
+      "chordName": "D",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 9,
+      "beat": 3,
+      "chordName": "D",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 10,
+      "beat": 1,
+      "chordName": "Em",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 10,
+      "beat": 2,
+      "chordName": "Em",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 10,
+      "beat": 3,
+      "chordName": "C",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 11,
+      "beat": 1,
+      "chordName": "Am",
+      "target": {
+        "degree": 2,
+        "world": "minor",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 11,
+      "beat": 2,
+      "chordName": "Am",
+      "target": {
+        "degree": 2,
+        "world": "minor",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 11,
+      "beat": 3,
+      "chordName": "D",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 12,
+      "beat": 1,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 12,
+      "beat": 2,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 12,
+      "beat": 3,
+      "chordName": "G",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    }
+  ]
+}

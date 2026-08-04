@@ -1,0 +1,365 @@
+{
+  "slug": "twinkle",
+  "title": "Twinkle Twinkle Little Star",
+  "artist": "Traditional",
+  "key": "C",
+  "bpm": 100,
+  "timeSignature": [
+    4,
+    4
+  ],
+  "events": [
+    {
+      "bar": 1,
+      "beat": 1,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 1,
+      "beat": 2,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 1,
+      "beat": 3,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 1,
+      "beat": 4,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 1,
+      "chordName": "F",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 2,
+      "chordName": "F",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 3,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 4,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 1,
+      "chordName": "G",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 2,
+      "chordName": "G",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 3,
+      "chordName": "G",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 4,
+      "chordName": "G",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 1,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 2,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 3,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 4,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 1,
+      "chordName": "F",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 2,
+      "chordName": "F",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 3,
+      "chordName": "F",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 4,
+      "chordName": "F",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 1,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 2,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 3,
+      "chordName": "G",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 4,
+      "chordName": "G",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 1,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 2,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 3,
+      "chordName": "G",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 4,
+      "chordName": "G",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 1,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 2,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 3,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 4,
+      "chordName": "C",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 1
+      }
+    }
+  ]
+}

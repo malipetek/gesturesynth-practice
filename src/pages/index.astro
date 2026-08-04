@@ -1,17 +1,77 @@
 ---
+import Layout from '../layouts/Layout.astro';
+import { getSongs } from '../lib/songs';
+import type { Song } from '../lib/types';
 
+const songList = [...getSongs()].sort((a, b) => a.title.localeCompare(b.title));
+
+const barCount = (song: Song) => song.events.reduce((max, e) => Math.max(max, e.bar), 0);
 ---
 
-<html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="viewport" content="width=device-width" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
-	</head>
-	<body>
-		<h1>Astro</h1>
-	</body>
-</html>
+<Layout
+	title="Gesture Synth Practice"
+	description="Learn to play songs on Gesture Synth, one chord gesture at a time."
+>
+	<section class="hero container">
+		<p class="eyebrow">Gesture Synth</p>
+		<h1>Practice</h1>
+		<p>Learn to play songs on Gesture Synth, one chord gesture at a time.</p>
+	</section>
+
+	<section class="steps container">
+		<h2 class="muted">How it works</h2>
+		<div class="grid grid-3">
+			<div class="card step">
+				<span class="step-num">Left hand</span>
+				<h3>Pick a scale degree</h3>
+				<p class="muted">
+					Raise 1–5 fingers for degrees I–V; index + pinky for VI, add the thumb for VII. Tilt
+					your wrist to flip between major and minor.
+				</p>
+			</div>
+			<div class="card step">
+				<span class="step-num">Right hand</span>
+				<h3>Shape the chord</h3>
+				<p class="muted">
+					1–4 fingers choose the chord quality, and your thumb shifts the octave up or down.
+				</p>
+			</div>
+			<div class="card step">
+				<span class="step-num">Match both</span>
+				<h3>Follow the chart</h3>
+				<p class="muted">
+					Line both hands up to the target shape for each chord in the chart and the song rings
+					out.
+				</p>
+			</div>
+		</div>
+	</section>
+
+	<section class="songbook container">
+		<div class="songbook-head">
+			<h2>Songbook</h2>
+			<span class="song-count">{songList.length} {songList.length === 1 ? 'song' : 'songs'}</span>
+		</div>
+		{songList.length === 0 ? (
+			<div class="empty">
+				<span class="glyph">&#9834;</span>
+				<h3>No songs yet</h3>
+				<p>Songs will appear here once the songbook is ready. Check back soon.</p>
+			</div>
+		) : (
+			<div class="grid">
+				{songList.map((song) => (
+					<a class="card song-card" href={`/song/${song.slug}`}>
+						<p class="song-title">{song.title}</p>
+						<p class="song-artist">{song.artist}</p>
+						<div class="song-meta">
+							<span class="tag"><span class="dot">&#9679;</span> {song.key}</span>
+							<span class="tag">{song.bpm} BPM</span>
+							<span class="tag">{barCount(song)} bars · {song.events.length} chords</span>
+						</div>
+					</a>
+				))}
+			</div>
+		)}
+	</section>
+</Layout>
