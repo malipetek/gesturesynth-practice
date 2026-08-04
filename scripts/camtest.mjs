@@ -22,6 +22,17 @@ try{
   finalStatus=await p.$eval('.status',el=>el.textContent.trim());
 }catch{}
 const ready=finalStatus.includes('Camera ready');
-console.log(JSON.stringify({status:finalStatus, mediaPipeReachedReady:ready}));
+const overlay=await p.evaluate(()=>{
+  const cam=document.querySelector('.camera');
+  const canvas=document.querySelector('.camera-canvas');
+  if(!cam||!canvas) return {fullPage:false, canvasPresent:!!canvas};
+  const r=cam.getBoundingClientRect();
+  return {
+    fullPage: r.width>=window.innerWidth && r.height>=window.innerHeight,
+    canvasPresent: true,
+    canvasSize: [canvas.clientWidth, canvas.clientHeight],
+  };
+});
+console.log(JSON.stringify({status:finalStatus, mediaPipeReachedReady:ready, overlay}));
 console.log('console errors:', logs.length?logs.slice(0,10).join('\n'):'(none)');
 await b.close();

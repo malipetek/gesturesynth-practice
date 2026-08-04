@@ -338,3 +338,25 @@ a.card:hover {
   margin-bottom: 0.5rem;
   color: var(--cyan);
 }
+
+/* Song practice page: the camera feed is a full-page fixed layer inside the
+   Player, so page chrome needs to sit above it. The stage must stay below the
+   song header — on a z-index tie the later element (.song-stage, and thus the
+   camera inside it) would paint over the header. */
+.song-header,
+.song-stage {
+  position: relative;
+}
+
+.song-header {
+  z-index: 2;
+}
+
+.song-stage {
+  z-index: 1;
+}
+
+.site-footer {
+  position: relative;
+  z-index: 1;
+}

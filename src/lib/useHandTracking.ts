@@ -6,6 +6,7 @@ import type { HandFrame, LeftHandState, RightHandState } from './types';
 import {
   classifyLeft,
   classifyRight,
+  type HandLandmarks,
   type Landmark,
 } from './gesture';
 
@@ -22,6 +23,8 @@ export interface UseHandTrackingResult {
   status: TrackingStatus;
   error: string | null;
   frameRef: MutableRefObject<HandFrame | null>;
+  /** Smoothed raw landmarks per hand, updated every detected frame (pre-debounce). */
+  landmarksRef: MutableRefObject<HandLandmarks>;
 }
 
 const WASM_URL =
@@ -86,6 +89,7 @@ function signature(
 export function useHandTracking(): UseHandTrackingResult {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const frameRef = useRef<HandFrame | null>(null);
+  const landmarksRef = useRef<HandLandmarks>({ left: null, right: null });
   const [status, setStatus] = useState<TrackingStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -191,6 +195,8 @@ export function useHandTracking(): UseHandTrackingResult {
           smoothed.right = null;
         }
 
+        landmarksRef.current = { left: smoothed.left, right: smoothed.right };
+
         const sig = signature(left, right);
 
         if (sig !== publishedSig) {
@@ -238,5 +244,5 @@ export function useHandTracking(): UseHandTrackingResult {
     };
   }, []);
 
-  return { videoRef, status, error, frameRef };
+  return { videoRef, status, error, frameRef, landmarksRef };
 }

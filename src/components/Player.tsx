@@ -4,6 +4,8 @@ import * as Tone from 'tone';
 import { Chord, Note } from 'tonal';
 // @ts-ignore - provided by the parallel hand-tracking workstream; contract declared below
 import { useHandTracking } from '../lib/useHandTracking';
+import { FINGERTIPS, HAND_CONNECTIONS } from '../lib/gesture';
+import type { HandLandmarks, Landmark } from '../lib/gesture';
 import type {
   GestureTarget,
   HandFrame,
@@ -28,6 +30,7 @@ interface HandTrackingResult {
   status: TrackingStatus;
   error: string | null;
   frameRef: MutableRefObject<HandFrame | null>;
+  landmarksRef: MutableRefObject<HandLandmarks>;
 }
 
 const COUNTIN_BEATS = 4;
@@ -114,11 +117,12 @@ function compareFrame(frame: HandFrame | null, target: GestureTarget): MatchRepo
   };
 }
 
-function chordNotes(chordName: string): number[] {
+function chordNotes(chordName: string, octaveShift = 0): number[] {
+  const mul = Math.pow(2, octaveShift);
   return (Chord.get(chordName).notes as string[])
     .map((n) => {
       const midi = 60 + Note.chroma(n);
-      return Number.isFinite(midi) ? 440 * Math.pow(2, (midi - 69) / 12) : 0;
+      return Number.isFinite(midi) ? 440 * Math.pow(2, (midi - 69) / 12) * mul : 0;
     })
     .filter((f) => f > 0);
 }
@@ -131,7 +135,7 @@ function qualityLabel(world: World, quality: number): string {
 
 interface Instruments {
   pad: Tone.PolySynth;
-  metronome: Tone.NoiseSynth;
+  metronome: Tone.PolySynth;
   chord: Tone.PolySynth;
   padReverb: Tone.Reverb;
   chordReverb: Tone.Reverb;
@@ -148,11 +152,16 @@ function buildInstruments(): Instruments {
   pad.volume.value = -16;
 
   const clickFilter = new Tone.Filter({ type: 'bandpass', frequency: 1800, Q: 1.2 }).toDestination();
-  const metronome = new Tone.NoiseSynth({
-    noise: { type: 'white' },
-    envelope: { attack: 0.001, decay: 0.06, release: 0.02 },
+  // PolySynth so every click is a fresh voice: a NoiseSynth re-starts one
+  // shared noise source per click, and if two clicks ever fire late in the
+  // same tick their clamped start times collide and Tone throws
+  // ("Start time must be strictly greater than previous start time").
+  const metronome = new Tone.PolySynth(Tone.Synth, {
+    oscillator: { type: 'sine' },
+    envelope: { attack: 0.001, decay: 0.05, sustain: 0, release: 0.02 },
   }).connect(clickFilter);
-  metronome.volume.value = -26;
+  metronome.maxPolyphony = 8;
+  metronome.volume.value = -20;
 
   const chordReverb = new Tone.Reverb({ decay: 2.6, preDelay: 0.01, wet: 0.35 }).toDestination();
   const chord = new Tone.PolySynth(Tone.FMSynth, {
@@ -213,55 +222,71 @@ function schedulePlayback(
   const barBeatTime = (bar: number, beat: number) =>
     (COUNTIN_BEATS + (bar - 1) * beatsPerBar + (beat - 1)) * spb;
 
+  // Everything is scheduled through the Transport. Audio is triggered inside
+  // Transport callbacks with the precise AudioContext `time`, and visuals are
+  // deferred with Tone.Draw at that same time. Scheduling raw relative
+  // seconds straight against the AudioContext clock only lines up with the
+  // Transport on the first run after the context is created — on replays
+  // every time is already in the past and fires at once.
   tp.bpm.value = song.bpm;
   tp.timeSignature = song.timeSignature;
   tp.cancel(0);
   Tone.getDraw().cancel(0);
 
+  const draw = Tone.getDraw();
+
+  // Metronome + per-beat UI updates.
   for (let b = 0; b < totalBeats; b++) {
     tp.schedule((time) => {
       const accent = b % beatsPerBar === 0;
-      instruments.metronome.triggerAttackRelease('16n', time, accent ? 0.7 : 0.35);
+      instruments.metronome.triggerAttackRelease(accent ? 2093 : 1568, '16n', time, accent ? 0.7 : 0.35);
+      draw.schedule(() => {
+        const activeIdx = activeIndexAtBeat[b];
+        const target = activeIdx >= 0 ? song.events[activeIdx].target : null;
+        const frame = listenOnly ? null : frameBridge.current.frameRef?.current ?? null;
+        const report = target && frame ? compareFrame(frame, target) : null;
+        const volume = frame?.right?.volume ?? null;
+        dispatch({ type: 'BEAT', beat: b, report, volume });
+      }, time);
     }, b * spb);
   }
 
+  // Backing pad, one chord per bar.
   const barChords = computeBarChords(song);
   for (let bar = 1; bar <= maxBar; bar++) {
-    const t = (COUNTIN_BEATS + (bar - 1) * beatsPerBar) * spb;
-    instruments.pad.triggerAttackRelease(
-      chordNotes(barChords[bar - 1]),
-      spb * beatsPerBar * 2.2,
-      t,
-      0.5,
-    );
+    const notes = chordNotes(barChords[bar - 1]);
+    const duration = spb * beatsPerBar * 2.2;
+    tp.schedule((time) => {
+      instruments.pad.triggerAttackRelease(notes, duration, time, 0.5);
+    }, barBeatTime(bar, 1));
   }
 
-  for (let b = 0; b < totalBeats; b++) {
-    Tone.getDraw().schedule(() => {
-      const activeIdx = activeIndexAtBeat[b];
-      const target = activeIdx >= 0 ? song.events[activeIdx].target : null;
-      const frame = listenOnly ? null : frameBridge.current.frameRef?.current ?? null;
-      const report = target && frame ? compareFrame(frame, target) : null;
-      const volume = frame?.right?.volume ?? null;
-      dispatch({ type: 'BEAT', beat: b, report, volume });
-    }, b * spb);
-  }
-
+  // Chord events: in listen-only mode every stab plays so you can hear the
+  // song; when tracking, scoring happens here and the audible stab comes
+  // from the live full-match trigger in the Player.
   song.events.forEach((ev, i) => {
     const t = barBeatTime(ev.bar, ev.beat);
     tp.schedule((time) => {
+      if (listenOnly) {
+        instruments.chord.triggerAttackRelease(
+          chordNotes(ev.chordName, ev.target.octave),
+          '1m',
+          time,
+          0.35,
+        );
+      }
       const frame = listenOnly ? null : frameBridge.current.frameRef?.current ?? null;
       const report = compareFrame(frame, ev.target);
-      if (report && report.score >= 1) {
-        const velocity = 0.1 + (frame?.right?.volume ?? 0.5) * 0.4;
-        instruments.chord.triggerAttackRelease(chordNotes(ev.chordName), '1m', time, velocity);
-      }
       dispatch({ type: 'RESULT', index: i, report });
     }, t);
   });
 
-  Tone.getDraw().schedule(() => dispatch({ type: 'PLAYING' }), COUNTIN_BEATS * spb);
-  Tone.getDraw().schedule(() => dispatch({ type: 'FINISH' }), totalBeats * spb);
+  tp.schedule((time) => {
+    draw.schedule(() => dispatch({ type: 'PLAYING' }), time);
+  }, COUNTIN_BEATS * spb);
+  tp.schedule((time) => {
+    draw.schedule(() => dispatch({ type: 'FINISH' }), time);
+  }, totalBeats * spb);
   tp.schedule((time) => tp.stop(time + 0.3), totalBeats * spb);
 
   tp.start();
@@ -270,29 +295,104 @@ function schedulePlayback(
 interface TrackerBridge {
   frameRef: MutableRefObject<HandFrame | null> | null;
   videoRef: MutableRefObject<HTMLVideoElement | null> | null;
+  landmarksRef: MutableRefObject<HandLandmarks> | null;
 }
 
 interface TrackerProps {
   bridge: MutableRefObject<TrackerBridge>;
   onStatus: (s: TrackingStatus) => void;
   onError: (e: string | null) => void;
+  reportRef: MutableRefObject<MatchReport | null>;
 }
 
-function Tracker({ bridge, onStatus, onError }: TrackerProps) {
-  const { videoRef, status, error, frameRef } = useHandTracking() as HandTrackingResult;
+function Tracker({ bridge, onStatus, onError, reportRef }: TrackerProps) {
+  const { videoRef, status, error, frameRef, landmarksRef } =
+    useHandTracking() as HandTrackingResult;
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   useLayoutEffect(() => {
     bridge.current.frameRef = frameRef;
     bridge.current.videoRef = videoRef;
-  }, [bridge, frameRef, videoRef]);
+    bridge.current.landmarksRef = landmarksRef;
+  }, [bridge, frameRef, videoRef, landmarksRef]);
   useEffect(() => {
     onStatus(status);
   }, [status, onStatus]);
   useEffect(() => {
     onError(error);
   }, [error, onError]);
+
+  // Full-page hand-skeleton overlay, drawn straight from the smoothed
+  // landmarks every animation frame (bypasses React rendering entirely).
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const ctx = canvas?.getContext('2d');
+    if (!canvas || !ctx) return;
+    let raf = 0;
+
+    const drawHand = (pts: { x: number; y: number }[], rgb: string, matched: boolean) => {
+      const color = matched ? '52, 211, 153' : rgb; // green when this hand's dims match
+      ctx.strokeStyle = `rgba(${color}, 0.9)`;
+      ctx.fillStyle = `rgba(${color}, 0.95)`;
+      ctx.lineWidth = 2;
+      ctx.shadowColor = `rgba(${color}, 0.75)`;
+      ctx.shadowBlur = 10;
+      ctx.beginPath();
+      for (const [a, b] of HAND_CONNECTIONS) {
+        ctx.moveTo(pts[a].x, pts[a].y);
+        ctx.lineTo(pts[b].x, pts[b].y);
+      }
+      ctx.stroke();
+      for (let i = 0; i < pts.length; i++) {
+        ctx.beginPath();
+        ctx.arc(pts[i].x, pts[i].y, FINGERTIPS.includes(i) ? 4 : 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+    };
+
+    const loop = () => {
+      raf = requestAnimationFrame(loop);
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      if (!w || !h) return;
+      const pw = Math.round(w * dpr);
+      const ph = Math.round(h * dpr);
+      if (canvas.width !== pw || canvas.height !== ph) {
+        canvas.width = pw;
+        canvas.height = ph;
+      }
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, w, h);
+      const video = videoRef.current;
+      const vw = video?.videoWidth ?? 0;
+      const vh = video?.videoHeight ?? 0;
+      if (!vw || !vh) return;
+      // Project normalized landmarks into mirrored, object-fit: cover video space.
+      const scale = Math.max(w / vw, h / vh);
+      const dw = vw * scale;
+      const dh = vh * scale;
+      const ox = (w - dw) / 2;
+      const oy = (h - dh) / 2;
+      const project = (lm: Landmark) => ({ x: ox + (1 - lm.x) * dw, y: oy + lm.y * dh });
+      const report = reportRef.current;
+      const { left, right } = landmarksRef.current;
+      if (left) {
+        drawHand(left.map(project), '34, 211, 238', !!report && report.degree && report.world);
+      }
+      if (right) {
+        drawHand(right.map(project), '244, 63, 142', !!report && report.quality && report.octave);
+      }
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [videoRef, landmarksRef, reportRef]);
+
   return (
     <div className="camera" aria-hidden="true">
       <video ref={videoRef} className="camera-video" autoPlay playsInline muted />
+      <div className="camera-scrim" />
+      <canvas ref={canvasRef} className="camera-canvas" />
     </div>
   );
 }
@@ -381,7 +481,7 @@ export default function Player({ song }: { song: Song }) {
     statusRef.current = trackingStatus;
   }, [trackingStatus]);
 
-  const frameBridge = useRef<TrackerBridge>({ frameRef: null, videoRef: null });
+  const frameBridge = useRef<TrackerBridge>({ frameRef: null, videoRef: null, landmarksRef: null });
   const instrumentsRef = useRef<Instruments | null>(null);
   const audioUnlockedRef = useRef(false);
   const sessionActiveRef = useRef(false);
@@ -390,10 +490,14 @@ export default function Player({ song }: { song: Song }) {
 
   useEffect(
     () => () => {
-      const tp = Tone.getTransport();
-      tp.stop();
-      tp.cancel(0);
-      Tone.getDraw().cancel(0);
+      try {
+        const tp = Tone.getTransport();
+        tp.stop();
+        tp.cancel(0);
+        Tone.getDraw().cancel(0);
+      } catch {
+        // ignore Tone teardown errors on unmount
+      }
       if (instrumentsRef.current) {
         const i = instrumentsRef.current;
         i.pad.dispose();
@@ -407,6 +511,48 @@ export default function Player({ song }: { song: Song }) {
     },
     [],
   );
+
+  // Latest match report for the canvas overlay (ref, so drawing stays
+  // out of the React render cycle).
+  const reportRef = useRef<MatchReport | null>(null);
+  useEffect(() => {
+    reportRef.current = state.currentReport;
+  }, [state.currentReport]);
+
+  // Edge-triggered chord stab: the instant both hands fully match the active
+  // target, the chord rings out — the instrument responds immediately instead
+  // of only on beat ticks. Latch resets when the match is broken so the same
+  // chord can be replayed.
+  const stabLatchRef = useRef(-1);
+  useEffect(() => {
+    if (state.phase !== 'playing' || state.mode !== 'track') return;
+    let raf = 0;
+    const loop = () => {
+      const idx = stateRef.current.activeIndex;
+      if (idx >= 0) {
+        const ev = song.events[idx];
+        const frame = frameBridge.current.frameRef?.current ?? null;
+        const report = compareFrame(frame, ev.target);
+        if (report && report.score >= 1) {
+          if (stabLatchRef.current !== idx) {
+            stabLatchRef.current = idx;
+            const velocity = 0.1 + (frame?.right?.volume ?? 0.5) * 0.4;
+            instrumentsRef.current?.chord.triggerAttackRelease(
+              chordNotes(ev.chordName, ev.target.octave),
+              '1m',
+              Tone.now(),
+              velocity,
+            );
+          }
+        } else if (stabLatchRef.current === idx) {
+          stabLatchRef.current = -1;
+        }
+      }
+      raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [state.phase, state.mode, song]);
 
   const start = useCallback(() => {
     if (isStartingRef.current || sessionActiveRef.current) return;
@@ -433,12 +579,18 @@ export default function Player({ song }: { song: Song }) {
   }, [song, activeIndexAtBeat, dispatch]);
 
   const stop = useCallback(() => {
-    if (!sessionActiveRef.current) return;
+    // No early return on the session flag: after a song finishes on its own
+    // the flag is already false, but "Practice again" must still reset to idle.
     sessionActiveRef.current = false;
-    const tp = Tone.getTransport();
-    tp.stop();
-    tp.cancel(0);
-    Tone.getDraw().cancel(0);
+    try {
+      const tp = Tone.getTransport();
+      tp.stop();
+      tp.cancel(0);
+      Tone.getDraw().cancel(0);
+    } catch {
+      // Tone's state can be inconsistent after an audio-scheduling error;
+      // the UI must still reset.
+    }
     dispatch({ type: 'STOP' });
   }, [dispatch]);
 
@@ -531,7 +683,7 @@ export default function Player({ song }: { song: Song }) {
       : `Bar ${Math.floor(barBeat / beatsPerBar) + 1} · beat ${(barBeat % beatsPerBar) + 1}`;
 
   return (
-    <div className="player">
+    <div className={`player${state.mode === 'track' ? ' has-camera' : ''}`}>
       <header className="player-header">
         <div>
           <h1 className="title">{song.title}</h1>
@@ -546,7 +698,12 @@ export default function Player({ song }: { song: Song }) {
       </header>
 
       {state.mode === 'track' && (
-        <Tracker bridge={frameBridge} onStatus={setTrackingStatus} onError={setTrackingError} />
+        <Tracker
+          bridge={frameBridge}
+          onStatus={setTrackingStatus}
+          onError={setTrackingError}
+          reportRef={reportRef}
+        />
       )}
 
       {state.phase === 'idle' && (
@@ -590,7 +747,7 @@ export default function Player({ song }: { song: Song }) {
       )}
 
       {(state.phase === 'countin' || state.phase === 'playing') && (
-        <>
+        <div className="stage">
           <section className="feedback">
             <div className="chips">
               {chips.map((c) => (
@@ -656,7 +813,7 @@ export default function Player({ song }: { song: Song }) {
               {state.hits}/{total} hits · combo {state.combo} (best {state.bestCombo})
             </span>
           </div>
-        </>
+        </div>
       )}
 
       {state.phase === 'done' && (
