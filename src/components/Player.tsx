@@ -129,6 +129,18 @@ function chordNotes(chordName: string, octaveShift = 0): number[] {
 
 type QualityKey = 1 | 2 | 3 | 4;
 
+/** Per-degree chord colors, mirroring gesturesynth.com's --chord-I…VII palette. */
+const DEGREE_RGB: Record<number, string> = {
+  1: '61, 255, 224',
+  2: '255, 107, 90',
+  3: '240, 198, 90',
+  4: '120, 210, 255',
+  5: '255, 150, 70',
+  6: '255, 90, 140',
+  7: '160, 200, 255',
+};
+const RIGHT_HAND_RGB = '255, 107, 90';
+
 function qualityLabel(world: World, quality: number): string {
   return QUALITY_LABELS[world][quality as QualityKey];
 }
@@ -303,9 +315,10 @@ interface TrackerProps {
   onStatus: (s: TrackingStatus) => void;
   onError: (e: string | null) => void;
   reportRef: MutableRefObject<MatchReport | null>;
+  targetRef: MutableRefObject<GestureTarget | null>;
 }
 
-function Tracker({ bridge, onStatus, onError, reportRef }: TrackerProps) {
+function Tracker({ bridge, onStatus, onError, reportRef, targetRef }: TrackerProps) {
   const { videoRef, status, error, frameRef, landmarksRef } =
     useHandTracking() as HandTrackingResult;
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -329,13 +342,15 @@ function Tracker({ bridge, onStatus, onError, reportRef }: TrackerProps) {
     if (!canvas || !ctx) return;
     let raf = 0;
 
+    // Each hand keeps its hue (left = current target's degree color, right =
+    // coral); a full match on that hand's dimensions brightens it + adds glow.
     const drawHand = (pts: { x: number; y: number }[], rgb: string, matched: boolean) => {
-      const color = matched ? '52, 211, 153' : rgb; // green when this hand's dims match
-      ctx.strokeStyle = `rgba(${color}, 0.9)`;
-      ctx.fillStyle = `rgba(${color}, 0.95)`;
+      const alpha = matched ? 0.95 : 0.5;
+      ctx.strokeStyle = `rgba(${rgb}, ${alpha})`;
+      ctx.fillStyle = `rgba(${rgb}, ${alpha})`;
       ctx.lineWidth = 2;
-      ctx.shadowColor = `rgba(${color}, 0.75)`;
-      ctx.shadowBlur = 10;
+      ctx.shadowColor = `rgba(${rgb}, ${matched ? 0.85 : 0.4})`;
+      ctx.shadowBlur = matched ? 18 : 6;
       ctx.beginPath();
       for (const [a, b] of HAND_CONNECTIONS) {
         ctx.moveTo(pts[a].x, pts[a].y);
@@ -376,17 +391,18 @@ function Tracker({ bridge, onStatus, onError, reportRef }: TrackerProps) {
       const oy = (h - dh) / 2;
       const project = (lm: Landmark) => ({ x: ox + (1 - lm.x) * dw, y: oy + lm.y * dh });
       const report = reportRef.current;
+      const degreeRgb = DEGREE_RGB[targetRef.current?.degree ?? 1];
       const { left, right } = landmarksRef.current;
       if (left) {
-        drawHand(left.map(project), '34, 211, 238', !!report && report.degree && report.world);
+        drawHand(left.map(project), degreeRgb, !!report && report.degree && report.world);
       }
       if (right) {
-        drawHand(right.map(project), '244, 63, 142', !!report && report.quality && report.octave);
+        drawHand(right.map(project), RIGHT_HAND_RGB, !!report && report.quality && report.octave);
       }
     };
     raf = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(raf);
-  }, [videoRef, landmarksRef, reportRef]);
+  }, [videoRef, landmarksRef, reportRef, targetRef]);
 
   return (
     <div className="camera" aria-hidden="true">
@@ -512,12 +528,15 @@ export default function Player({ song }: { song: Song }) {
     [],
   );
 
-  // Latest match report for the canvas overlay (ref, so drawing stays
-  // out of the React render cycle).
+  // Latest match report + active target for the canvas overlay (refs, so
+  // drawing stays out of the React render cycle).
   const reportRef = useRef<MatchReport | null>(null);
+  const targetRef = useRef<GestureTarget | null>(null);
   useEffect(() => {
     reportRef.current = state.currentReport;
-  }, [state.currentReport]);
+    targetRef.current =
+      state.activeIndex >= 0 ? song.events[state.activeIndex].target : null;
+  }, [state.currentReport, state.activeIndex, song]);
 
   // Edge-triggered chord stab: the instant both hands fully match the active
   // target, the chord rings out — the instrument responds immediately instead
@@ -703,6 +722,7 @@ export default function Player({ song }: { song: Song }) {
           onStatus={setTrackingStatus}
           onError={setTrackingError}
           reportRef={reportRef}
+          targetRef={targetRef}
         />
       )}
 
@@ -789,7 +809,9 @@ export default function Player({ song }: { song: Song }) {
                           {ev.bar}.{ev.beat}
                         </span>
                         <span className="chord">{ev.chordName}</span>
-                        <span className="deg">{DEGREE_LABELS[ev.target.degree]}</span>
+                        <span className={`deg deg-${ev.target.degree}`}>
+                          {DEGREE_LABELS[ev.target.degree]}
+                        </span>
                         <span className={`world ${ev.target.world}`}>{ev.target.world}</span>
                         <span className="qual">{qualityLabel(ev.target.world, ev.target.quality)}</span>
                         <span className="oct">{ev.target.octave > 0 ? '+1' : '−1'}</span>
