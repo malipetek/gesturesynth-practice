@@ -101,59 +101,42 @@ export function classifyRight(lm: Landmark[]): RightHandState | null {
 }
 
 /**
- * A deliberate 👍 (guided-mode navigation gesture). Balanced to reject both
- * historical failure modes:
+ * A deliberate 👍 (guided-mode navigation gesture). ROTATION-INVARIANT by
+ * design: only the finger configuration is checked — thumb genuinely
+ * extended, all four fingers genuinely curled — never the wrist's
+ * orientation. Earlier versions also required an upright hand and a
+ * vertically-pointing thumb, which silently rejected real thumbs-ups tilted
+ * counter-clockwise; users do not hold the gesture at a consistent angle.
  *
- *  - sideways hands (old false positive): rejected by requiring the hand
- *    upright — wrist→middle-MCP axis more vertical than horizontal;
- *  - thumbs-ups angled toward the camera (old false negative — read as a
- *    fist): the thumb test is STRETCH (tip far beyond the IP joint, scaled
- *    to the thumb's own size) + upward-ish, not "tip above both joints";
- *  - all four fingers must be genuinely curled (fingertip no farther from
- *    the wrist than its own PIP, with margin for loose fists) so chord
- *    shapes never match.
+ * Both tests are distances measured within the hand itself, so they're
+ * rotation- and camera-distance-independent. Real-hand measurements:
+ * deliberate 👍 → thumb stretch ≈ 0.63, curl ratios ≈ 0.75–0.79;
+ * tucked-thumb fist → stretch ≈ 0.15–0.2; open fingers → curl ≈ 1.26–1.34.
+ * Playing shapes can never collide: chord quality always raises 1–4
+ * fingers, which fails the curl test.
  */
 export function isThumbsUp(lm: Landmark[]): boolean {
   if (lm.length < 21) return false;
   const wrist = lm[0];
-  // Hand roughly upright: the wrist→middle-MCP axis must be more vertical
-  // than horizontal (rejects sideways hands, which used to false-trigger).
-  if (!(lm[9].y < wrist.y)) return false;
-  if (Math.abs(lm[9].y - wrist.y) <= Math.abs(lm[9].x - wrist.x)) return false;
-  // Thumb genuinely RAISED: the distal segment (IP→tip) must travel more
-  // vertically than horizontally — a true 👍 points the thumb up, not out to
-  // the side or along the fist. Measured on the thumb's own distal segment so
-  // it's camera-distance independent.
-  const thumbDx = Math.abs(lm[4].x - lm[3].x);
-  const thumbDy = Math.abs(lm[4].y - lm[3].y);
-  const tipToMcp = Math.hypot(lm[4].x - lm[2].x, lm[4].y - lm[2].y);
   const handSize = Math.hypot(lm[9].x - wrist.x, lm[9].y - wrist.y) || 1e-6;
-  // Raised: tip above the IP joint, the distal segment clearly VERTICAL
-  // (rise >= ~1.5× run ⇒ ≥ ~56°; a 45° diagonal thumb resting across a fist
-  // fails, which was the fist false-positive), and the thumb stretched to a
-  // meaningful length relative to the hand.
-  if (!(lm[4].y < lm[3].y && thumbDy > thumbDx * 1.5 && tipToMcp > handSize * 0.35)) return false;
-  // All four fingers genuinely curled. Fingertip must sit clearly INSIDE its
-  // PIP joint's distance from the wrist. A fully curled finger's tip lands at
-  // roughly its PIP's distance (~1.0); an extended finger is ~1.5–1.9. The
-  // previous 1.15 margin let a relaxed fist (tips resting on the knuckles,
-  // ~1.1–1.3) read as "curled" — this is the fist false-positive. Use a tight
-  // margin and require the tip to also be below the fist's knuckle line so
-  // tips resting on TOP of the fist don't count.
+  // Thumb genuinely extended: tip well beyond its own MCP joint, scaled to
+  // the hand size.
+  const tipToMcp = Math.hypot(lm[4].x - lm[2].x, lm[4].y - lm[2].y);
+  const stretched = tipToMcp > handSize * 0.35;
+  // All four fingers genuinely curled: each fingertip sits clearly closer to
+  // the wrist than its own PIP joint (a curled finger's tip lands at roughly
+  // its PIP's distance or less; an extended finger is ~1.5+).
   const curled = (f: Finger) => {
     const { pip, tip: t } = FINGERS[f];
     const dTip = Math.hypot(lm[t].x - wrist.x, lm[t].y - wrist.y);
     const dPip = Math.hypot(lm[pip].x - wrist.x, lm[pip].y - wrist.y);
-    // curled: tip tucked in (notably closer to wrist than the PIP) AND not
-    // sticking up above the knuckle.
-    return dTip < dPip * 1.02 && lm[t].y > lm[pip].y;
+    return dTip < dPip * 1.02;
   };
-  const result = (['index', 'middle', 'ring', 'pinky'] as Finger[]).every(curled);
+  const result = stretched && (['index', 'middle', 'ring', 'pinky'] as Finger[]).every(curled);
 
   // TEMP diagnostic: log ONLY on a real detection, edge-triggered (once per
-  // activation) — console activity now means "the skip will fire", nothing
-  // else. Live geometry for non-firing poses stays on the guided overlay's
-  // debug readout (trise/curl line).
+  // activation) — console activity means "the skip will fire", nothing else.
+  // Live values for any pose stay on the guided overlay's debug readout.
   if (typeof window !== 'undefined') {
     const w = window as any;
     if (result && !w.__thumbWasHit) {
@@ -163,11 +146,8 @@ export function isThumbsUp(lm: Landmark[]): boolean {
         const dPip = Math.hypot(lm[pip].x - wrist.x, lm[pip].y - wrist.y);
         return (dTip / dPip).toFixed(2);
       };
-      const stretch = (tipToMcp / handSize).toFixed(2);
-      const vert = (Math.abs(lm[9].y - wrist.y) / (Math.abs(lm[9].x - wrist.x) + 1e-6)).toFixed(2);
-      const trise = (thumbDy / (thumbDx + 1e-6)).toFixed(2);
       console.log(
-        `[thumb] 👍 DETECTED stretch=${stretch} trise=${trise} vert=${vert} ` +
+        `[thumb] 👍 DETECTED stretch=${(tipToMcp / handSize).toFixed(2)} ` +
           `curl(i/m/r/p)=${ratio('index')}/${ratio('middle')}/${ratio('ring')}/${ratio('pinky')}`,
       );
     }

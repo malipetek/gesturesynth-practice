@@ -264,10 +264,10 @@ export default function GuidedPlayer({
     const loop = () => {
       raf = requestAnimationFrame(loop);
 
-      // 👍 Thumbs-up = skip to the next section. isThumbsUp is deliberately
-      // strict (thumb pointing up, hand upright, fingers truly curled) so a
-      // sideways or resting hand never trips it — and a chord shape always
-      // has 1–4 fingers raised, so playing can never look like a thumbs-up.
+      // 👍 Thumbs-up = skip to the next section. isThumbsUp is
+      // rotation-invariant (thumb extended + fingers truly curled — wrist
+      // orientation doesn't matter), and a chord shape always has 1–4
+      // fingers raised, so playing can never look like a thumbs-up.
       const ph = phaseRef.current;
       if (ph === 'stepping' || ph === 'section-done') {
         const rlm = frameBridge.current.landmarksRef?.current?.right ?? null;
@@ -303,16 +303,16 @@ export default function GuidedPlayer({
         let firing = false;
         if (rl && rl.length >= 21) {
           const w = rl[0];
-          const dx = Math.abs(rl[4].x - rl[3].x);
-          const dy = Math.abs(rl[4].y - rl[3].y);
-          const trise = dy / (dx + 1e-6);
+          const stretch =
+            Math.hypot(rl[4].x - rl[2].x, rl[4].y - rl[2].y) /
+            (Math.hypot(rl[9].x - w.x, rl[9].y - w.y) || 1e-6);
           const ratio = (pip: number, tip: number) => {
             const dTip = Math.hypot(rl[tip].x - w.x, rl[tip].y - w.y);
             const dPip = Math.hypot(rl[pip].x - w.x, rl[pip].y - w.y);
             return dTip / dPip;
           };
           firing = isThumbsUp(rl);
-          dbg = `trise ${trise.toFixed(2)} · curl ${[ratio(6, 8), ratio(10, 12), ratio(14, 16), ratio(18, 20)]
+          dbg = `stretch ${stretch.toFixed(2)} · curl ${[ratio(6, 8), ratio(10, 12), ratio(14, 16), ratio(18, 20)]
             .map((r) => r.toFixed(2))
             .join('/')}`;
         }

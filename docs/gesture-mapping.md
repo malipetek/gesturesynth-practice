@@ -103,3 +103,16 @@ metronome sound/volume (`localStorage['gs-practice-settings']`).
 
 - Thumb-up octave sign (+1) and whether base octave is 0 or +1.
 - Non-diatonic chords (sus, aug, 9ths) fall back to nearest quality / world by third.
+
+## App-level gesture: 👍 skip (practice app only — not from the instrument)
+
+Guided practice uses a held **thumbs-up** (800 ms) on the right hand to skip
+to the next section. Detection (`isThumbsUp` in `src/lib/gesture.ts`) is
+**rotation-invariant by design**: thumb extended (tip→MCP distance > 0.35 ×
+wrist→middle-MCP span) + all four fingers curled (tip→wrist < 1.02 ×
+PIP→wrist), with no wrist-orientation requirement — users hold the gesture at
+whatever angle feels natural; earlier orientation gates rejected
+counter-clockwise thumbs-ups. Playing shapes can't collide (quality always
+needs 1–4 raised fingers, which fails the curl test). Regression-tested by
+`scripts/thumbtest.mjs`.
+
