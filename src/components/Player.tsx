@@ -131,6 +131,7 @@ function schedulePlayback(
   dispatch: (a: Action) => void,
   frameBridge: MutableRefObject<TrackerBridge>,
   activeIndexAtBeat: number[],
+  tuneOn: () => boolean,
 ): void {
   const tp = Tone.getTransport();
   const beatsPerBar = song.timeSignature[0];
@@ -171,24 +172,28 @@ function schedulePlayback(
 
   // Backing pad, one chord per bar (Gesture Synth open-voicing triad). One
   // bar only — longer pads bleed into the next bar's chord and smear pitch.
+  // Gated at fire time so switching to 'hands only' mode mid-run silences
+  // the tune from the next bar on.
   const barChords = computeBarChords(song);
   const barDur = spb * beatsPerBar;
   for (let bar = 1; bar <= maxBar; bar++) {
     const notes = symbolTriadNotes(barChords[bar - 1]);
     tp.schedule((time) => {
-      voice.stab(notes, time, barDur * 0.98, 0.12);
+      if (listenOnly || tuneOn()) voice.stab(notes, time, barDur * 0.98, 0.12);
     }, barBeatTime(bar, 1));
   }
 
-  // Chord events: in listen-only mode every stab plays so you can hear the
-  // song; when tracking, scoring happens here and the audible stab comes
-  // from the live full-match trigger in the Player. Stabs last one beat —
-  // overlapping same-pitch stabs phase against each other (and clip).
+  // Chord events: the correct-chord stab (the tune) plays in listen-only
+  // and in the 'auto'/'both' voice modes — never in 'hands only'. Checked
+  // at fire time so mode toggles apply on the very next chord. Scoring
+  // happens here regardless. Stabs last one beat — overlapping same-pitch
+  // stabs phase against each other (and clip), and track mode keeps them
+  // quieter so they sit under the live hands.
   song.events.forEach((ev, i) => {
     const t = barBeatTime(ev.bar, ev.beat);
     tp.schedule((time) => {
-      if (listenOnly) {
-        voice.stab(targetNotes(ev.target, ev.chordName), time, spb * 0.92, 0.35);
+      if (listenOnly || tuneOn()) {
+        voice.stab(targetNotes(ev.target, ev.chordName), time, spb * 0.92, listenOnly ? 0.35 : 0.28);
       }
       const frame = listenOnly ? null : frameBridge.current.frameRef?.current ?? null;
       const report = compareFrame(frame, ev.target);
@@ -284,9 +289,12 @@ export default function Player({ song }: { song: Song }) {
   // Sound settings (Gesture Synth defaults: click metronome at 25%).
   const [settings, setSettings] = useState<PracticeSettings>(loadSettings);
   const [soundOpen, setSoundOpen] = useState(false);
-  // Voice behavior in timed track mode: 'strict' rings only on a full match;
-  // 'free' voices whatever the hands form (the real instrument's behavior).
-  const [voiceMode, setVoiceMode] = useState<'strict' | 'free'>('strict');
+  // Voice behavior in timed track mode (three modes):
+  //   'auto'  — just play: the app plays the correct chords; hands make no sound.
+  //   'both'  — free with play: hands voice whatever they form AND the tune plays.
+  //   'hands' — do not play: only your gestures sound; the app never plays
+  //             the correct notes (no stabs, no backing pad).
+  const [voiceMode, setVoiceMode] = useState<'auto' | 'both' | 'hands'>('both');
   const voiceModeRef = useRef(voiceMode);
   useEffect(() => {
     voiceModeRef.current = voiceMode;
@@ -352,23 +360,25 @@ export default function Player({ song }: { song: Song }) {
       state.activeIndex >= 0 ? song.events[state.activeIndex].target : null;
   }, [state.currentReport, state.activeIndex, song]);
 
-  // Live Gesture Synth behavior: while both hands fully match the active
-  // target the chord sustains (sawtooth through the swept lowpass), volume
-  // follows right-wrist height, and the filter follows right-wrist lean —
-  // exactly like the real instrument. Anything less than a full match is
-  // silent.
+  // Live Gesture Synth behavior: in the free-voicing modes ('both', 'hands')
+  // the instrument voices whatever the hands form — sawtooth through the
+  // swept lowpass, volume follows right-wrist height, filter follows
+  // right-wrist lean — exactly like the real instrument, right or wrong.
+  // In 'auto' mode the hands are silent and the scheduled stabs/pad carry
+  // the tune.
   useEffect(() => {
     if (state.phase !== 'playing' || state.mode !== 'track') return;
     let raf = 0;
     const loop = () => {
       const voice = voiceRef.current;
       if (voice) {
-        const idx = stateRef.current.activeIndex;
         const frame = frameBridge.current.frameRef?.current ?? null;
         if (frame?.right) voice.updateFilterSweep(frame.right.tone);
-        if (voiceModeRef.current === 'free') {
-          // Free play: voice whatever the hands form, right or wrong —
-          // exactly how the real instrument behaves. Scoring is unaffected.
+        if (voiceModeRef.current === 'auto') {
+          voice.setVolume(0);
+        } else {
+          // Free play: voice whatever the hands form, right or wrong.
+          // Scoring is unaffected.
           const deg = frame?.left?.degree ?? null;
           const world = frame?.left?.world ?? null;
           const qual = frame?.right?.quality ?? null;
@@ -379,17 +389,6 @@ export default function Player({ song }: { song: Song }) {
           } else {
             voice.setVolume(0);
           }
-        } else if (idx >= 0) {
-          const ev = song.events[idx];
-          const report = compareFrame(frame, ev.target);
-          if (report && report.score >= 1) {
-            voice.playNotes(targetNotes(ev.target, ev.chordName));
-            voice.setVolume(frame?.right?.volume ?? 0.5);
-          } else {
-            voice.setVolume(0);
-          }
-        } else {
-          voice.setVolume(0);
         }
       }
       raf = requestAnimationFrame(loop);
@@ -417,7 +416,9 @@ export default function Player({ song }: { song: Song }) {
         const voice = (voiceRef.current ??= new GSVoice(audioContextFromTone(() => Tone.getContext())));
         voice.setMetronome(settingsRef.current.metroSound, settingsRef.current.metroVolume);
         dispatch({ type: 'START' });
-        schedulePlayback(song, listenOnly, voice, dispatch, frameBridge, activeIndexAtBeat);
+        schedulePlayback(song, listenOnly, voice, dispatch, frameBridge, activeIndexAtBeat, () =>
+          voiceModeRef.current !== 'hands',
+        );
       } catch {
         sessionActiveRef.current = false;
       } finally {
@@ -754,19 +755,27 @@ export default function Player({ song }: { song: Song }) {
               <div className="voice-toggle" role="group" aria-label="Chord voicing behavior">
                 <button
                   type="button"
-                  className={voiceMode === 'strict' ? 'on' : ''}
-                  title="The chord rings only when both hands fully match"
-                  onClick={() => setVoiceMode('strict')}
+                  className={voiceMode === 'auto' ? 'on' : ''}
+                  title="Just play — the app plays the correct chords; your hands make no sound"
+                  onClick={() => setVoiceMode('auto')}
                 >
-                  On match
+                  Just play
                 </button>
                 <button
                   type="button"
-                  className={voiceMode === 'free' ? 'on' : ''}
-                  title="The instrument voices whatever your hands form, even if it's wrong"
-                  onClick={() => setVoiceMode('free')}
+                  className={voiceMode === 'both' ? 'on' : ''}
+                  title="Free with play — your hands voice whatever they form AND the tune plays along"
+                  onClick={() => setVoiceMode('both')}
                 >
-                  Free
+                  Free + tune
+                </button>
+                <button
+                  type="button"
+                  className={voiceMode === 'hands' ? 'on' : ''}
+                  title="Do not play — only your gestures sound; the app never plays the correct notes"
+                  onClick={() => setVoiceMode('hands')}
+                >
+                  Hands only
                 </button>
               </div>
             )}
