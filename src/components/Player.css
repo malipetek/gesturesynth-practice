@@ -455,6 +455,18 @@ p.thumb-hint {
   transition: width 60ms linear;
 }
 
+/* TEMP debug readout for thumb-geometry tuning. */
+.thumb-debug {
+  margin: 10px 0 0;
+  text-align: center;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
 /* Done-screen offer to graduate to the timed run — gold, a step up from mint. */
 
 .start-btn.timed-offer {

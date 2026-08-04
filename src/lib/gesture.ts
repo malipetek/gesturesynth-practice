@@ -120,23 +120,60 @@ export function isThumbsUp(lm: Landmark[]): boolean {
   // than horizontal (rejects sideways hands, which used to false-trigger).
   if (!(lm[9].y < wrist.y)) return false;
   if (Math.abs(lm[9].y - wrist.y) <= Math.abs(lm[9].x - wrist.x)) return false;
-  // Thumb clearly stretched out — tip well beyond the IP joint, measured
-  // against the thumb's own size so it works at any camera distance — and
-  // pointing at least upward-ish. No strict "tip above both joints": a
-  // natural 👍 often angles toward the camera, where tip.y ≈ ip.y, and that
-  // used to read as a fist.
+  // Thumb genuinely RAISED: the distal segment (IP→tip) must travel more
+  // vertically than horizontally — a true 👍 points the thumb up, not out to
+  // the side or along the fist. Measured on the thumb's own distal segment so
+  // it's camera-distance independent.
+  const thumbDx = Math.abs(lm[4].x - lm[3].x);
+  const thumbDy = Math.abs(lm[4].y - lm[3].y);
   const tipToMcp = Math.hypot(lm[4].x - lm[2].x, lm[4].y - lm[2].y);
-  const ipToMcp = Math.hypot(lm[3].x - lm[2].x, lm[3].y - lm[2].y);
-  if (!(lm[4].y < lm[2].y && tipToMcp > ipToMcp * 1.15)) return false;
-  // All four fingers genuinely curled (tolerant of loose fists): fingertip
-  // no farther from the wrist than its own PIP joint, with margin.
+  const handSize = Math.hypot(lm[9].x - wrist.x, lm[9].y - wrist.y) || 1e-6;
+  // Raised: tip above the IP joint, the distal segment clearly VERTICAL
+  // (rise >= ~1.5× run ⇒ ≥ ~56°; a 45° diagonal thumb resting across a fist
+  // fails, which was the fist false-positive), and the thumb stretched to a
+  // meaningful length relative to the hand.
+  if (!(lm[4].y < lm[3].y && thumbDy > thumbDx * 1.5 && tipToMcp > handSize * 0.35)) return false;
+  // All four fingers genuinely curled. Fingertip must sit clearly INSIDE its
+  // PIP joint's distance from the wrist. A fully curled finger's tip lands at
+  // roughly its PIP's distance (~1.0); an extended finger is ~1.5–1.9. The
+  // previous 1.15 margin let a relaxed fist (tips resting on the knuckles,
+  // ~1.1–1.3) read as "curled" — this is the fist false-positive. Use a tight
+  // margin and require the tip to also be below the fist's knuckle line so
+  // tips resting on TOP of the fist don't count.
   const curled = (f: Finger) => {
     const { pip, tip: t } = FINGERS[f];
     const dTip = Math.hypot(lm[t].x - wrist.x, lm[t].y - wrist.y);
     const dPip = Math.hypot(lm[pip].x - wrist.x, lm[pip].y - wrist.y);
-    return dTip < dPip * 1.15;
+    // curled: tip tucked in (notably closer to wrist than the PIP) AND not
+    // sticking up above the knuckle.
+    return dTip < dPip * 1.02 && lm[t].y > lm[pip].y;
   };
-  return (['index', 'middle', 'ring', 'pinky'] as Finger[]).every(curled);
+  const result = (['index', 'middle', 'ring', 'pinky'] as Finger[]).every(curled);
+
+  // TEMP diagnostic: log ONLY on a real detection, edge-triggered (once per
+  // activation) — console activity now means "the skip will fire", nothing
+  // else. Live geometry for non-firing poses stays on the guided overlay's
+  // debug readout (trise/curl line).
+  if (typeof window !== 'undefined') {
+    const w = window as any;
+    if (result && !w.__thumbWasHit) {
+      const ratio = (f: Finger) => {
+        const { pip, tip: t } = FINGERS[f];
+        const dTip = Math.hypot(lm[t].x - wrist.x, lm[t].y - wrist.y);
+        const dPip = Math.hypot(lm[pip].x - wrist.x, lm[pip].y - wrist.y);
+        return (dTip / dPip).toFixed(2);
+      };
+      const stretch = (tipToMcp / handSize).toFixed(2);
+      const vert = (Math.abs(lm[9].y - wrist.y) / (Math.abs(lm[9].x - wrist.x) + 1e-6)).toFixed(2);
+      const trise = (thumbDy / (thumbDx + 1e-6)).toFixed(2);
+      console.log(
+        `[thumb] 👍 DETECTED stretch=${stretch} trise=${trise} vert=${vert} ` +
+          `curl(i/m/r/p)=${ratio('index')}/${ratio('middle')}/${ratio('ring')}/${ratio('pinky')}`,
+      );
+    }
+    w.__thumbWasHit = result;
+  }
+  return result;
 }
 
 /** Landmark indices of the five fingertips. */
