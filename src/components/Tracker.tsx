@@ -106,8 +106,9 @@ export function Tracker({ bridge, onStatus, onError, reportRef, targetRef }: Tra
       const vw = video?.videoWidth ?? 0;
       const vh = video?.videoHeight ?? 0;
       if (!vw || !vh) return;
-      // Project normalized landmarks into mirrored, object-fit: cover video space.
-      const scale = Math.max(w / vw, h / vh);
+      // Project normalized landmarks into mirrored, object-fit: contain space
+      // (the whole frame is visible; letterbox bars sit at the sides).
+      const scale = Math.min(w / vw, h / vh);
       const dw = vw * scale;
       const dh = vh * scale;
       const ox = (w - dw) / 2;

@@ -2,7 +2,14 @@ import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'r
 import type { MutableRefObject } from 'react';
 import * as Tone from 'tone';
 import { audioContextFromTone, GSVoice, type MetronomeSound } from '../lib/gsVoice';
-import { compareFrame, qualityLabel, symbolTriadNotes, targetNotes } from '../lib/match';
+import {
+  compareFrame,
+  degreeRootHz,
+  qualityLabel,
+  symbolTriadNotes,
+  targetNotes,
+  voicingNotes,
+} from '../lib/match';
 import { loadSettings, saveSettings, type PracticeSettings } from '../lib/settings';
 import { Tracker, type TrackerBridge } from './Tracker';
 import GuidedPlayer from './GuidedPlayer';
@@ -162,24 +169,26 @@ function schedulePlayback(
     }, b * spb);
   }
 
-  // Backing pad, one chord per bar (Gesture Synth open-voicing triad).
+  // Backing pad, one chord per bar (Gesture Synth open-voicing triad). One
+  // bar only — longer pads bleed into the next bar's chord and smear pitch.
   const barChords = computeBarChords(song);
+  const barDur = spb * beatsPerBar;
   for (let bar = 1; bar <= maxBar; bar++) {
     const notes = symbolTriadNotes(barChords[bar - 1]);
-    const duration = spb * beatsPerBar * 2.2;
     tp.schedule((time) => {
-      voice.stab(notes, time, duration, 0.12);
+      voice.stab(notes, time, barDur * 0.98, 0.12);
     }, barBeatTime(bar, 1));
   }
 
   // Chord events: in listen-only mode every stab plays so you can hear the
   // song; when tracking, scoring happens here and the audible stab comes
-  // from the live full-match trigger in the Player.
+  // from the live full-match trigger in the Player. Stabs last one beat —
+  // overlapping same-pitch stabs phase against each other (and clip).
   song.events.forEach((ev, i) => {
     const t = barBeatTime(ev.bar, ev.beat);
     tp.schedule((time) => {
       if (listenOnly) {
-        voice.stab(targetNotes(ev.target, ev.chordName), time, spb * beatsPerBar, 0.35);
+        voice.stab(targetNotes(ev.target, ev.chordName), time, spb * 0.92, 0.35);
       }
       const frame = listenOnly ? null : frameBridge.current.frameRef?.current ?? null;
       const report = compareFrame(frame, ev.target);
@@ -275,6 +284,13 @@ export default function Player({ song }: { song: Song }) {
   // Sound settings (Gesture Synth defaults: click metronome at 25%).
   const [settings, setSettings] = useState<PracticeSettings>(loadSettings);
   const [soundOpen, setSoundOpen] = useState(false);
+  // Voice behavior in timed track mode: 'strict' rings only on a full match;
+  // 'free' voices whatever the hands form (the real instrument's behavior).
+  const [voiceMode, setVoiceMode] = useState<'strict' | 'free'>('strict');
+  const voiceModeRef = useRef(voiceMode);
+  useEffect(() => {
+    voiceModeRef.current = voiceMode;
+  }, [voiceMode]);
   const settingsRef = useRef(settings);
   useEffect(() => {
     settingsRef.current = settings;
@@ -350,7 +366,20 @@ export default function Player({ song }: { song: Song }) {
         const idx = stateRef.current.activeIndex;
         const frame = frameBridge.current.frameRef?.current ?? null;
         if (frame?.right) voice.updateFilterSweep(frame.right.tone);
-        if (idx >= 0) {
+        if (voiceModeRef.current === 'free') {
+          // Free play: voice whatever the hands form, right or wrong —
+          // exactly how the real instrument behaves. Scoring is unaffected.
+          const deg = frame?.left?.degree ?? null;
+          const world = frame?.left?.world ?? null;
+          const qual = frame?.right?.quality ?? null;
+          const root = deg !== null ? degreeRootHz(song.key, deg) : null;
+          if (root && world && qual) {
+            voice.playNotes(voicingNotes(root, world, qual, frame?.right?.octave ?? 1));
+            voice.setVolume(frame?.right?.volume ?? 0.5);
+          } else {
+            voice.setVolume(0);
+          }
+        } else if (idx >= 0) {
           const ev = song.events[idx];
           const report = compareFrame(frame, ev.target);
           if (report && report.score >= 1) {
@@ -721,6 +750,26 @@ export default function Player({ song }: { song: Song }) {
             <span className="stats">
               {state.hits}/{total} hits · combo {state.combo} (best {state.bestCombo})
             </span>
+            {state.mode === 'track' && (
+              <div className="voice-toggle" role="group" aria-label="Chord voicing behavior">
+                <button
+                  type="button"
+                  className={voiceMode === 'strict' ? 'on' : ''}
+                  title="The chord rings only when both hands fully match"
+                  onClick={() => setVoiceMode('strict')}
+                >
+                  On match
+                </button>
+                <button
+                  type="button"
+                  className={voiceMode === 'free' ? 'on' : ''}
+                  title="The instrument voices whatever your hands form, even if it's wrong"
+                  onClick={() => setVoiceMode('free')}
+                >
+                  Free
+                </button>
+              </div>
+            )}
             <div className="sound-settings">
               <button
                 type="button"

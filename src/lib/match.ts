@@ -62,30 +62,58 @@ export function chordRootHz(chordName: string): number | null {
  *
  * Octave shift multiplies every note by 2^shift (their octave down = ÷2).
  */
-export function targetNotes(target: GestureTarget, chordName: string): number[] {
-  const root = chordRootHz(chordName);
-  if (!root) return chordNotes(chordName, target.octave);
-  const major = target.world === 'major';
-  const third = root * Math.pow(SEMI, major ? 4 : 3);
-  const fifth = root * Math.pow(SEMI, 7);
+export function voicingNotes(
+  rootHz: number,
+  world: World,
+  quality: number,
+  octaveShift = 0,
+): number[] {
+  const major = world === 'major';
+  const third = rootHz * Math.pow(SEMI, major ? 4 : 3);
+  const fifth = rootHz * Math.pow(SEMI, 7);
   let notes: number[];
-  switch (target.quality) {
+  switch (quality) {
     case 2:
-      notes = [third, fifth, root * 2, third * 2];
+      notes = [third, fifth, rootHz * 2, third * 2];
       break;
     case 3:
-      notes = [root, third, fifth, root * Math.pow(SEMI, major ? 11 : 10)];
+      notes = [rootHz, third, fifth, rootHz * Math.pow(SEMI, major ? 11 : 10)];
       break;
     case 4:
       notes = major
-        ? [root, third, fifth, root * Math.pow(SEMI, 10)]
-        : [root, third, root * Math.pow(SEMI, 6), root * Math.pow(SEMI, 9)];
+        ? [rootHz, third, fifth, rootHz * Math.pow(SEMI, 10)]
+        : [rootHz, third, rootHz * Math.pow(SEMI, 6), rootHz * Math.pow(SEMI, 9)];
       break;
     default:
-      notes = [root, fifth, root * 2, third * 2];
+      notes = [rootHz, fifth, rootHz * 2, third * 2];
   }
-  const mul = Math.pow(2, target.octave);
+  const mul = Math.pow(2, octaveShift);
   return notes.map((f) => f * mul);
+}
+
+export function targetNotes(target: GestureTarget, chordName: string): number[] {
+  const root = chordRootHz(chordName);
+  if (!root) return chordNotes(chordName, target.octave);
+  return voicingNotes(root, target.world, target.quality, target.octave);
+}
+
+/** Degree → semitone offsets within the key scale (their table: VII = −1 in major keys). */
+const MAJOR_DEGREE_OFFSETS: Record<number, number> = { 1: 0, 2: 2, 3: 4, 4: 5, 5: 7, 6: 9, 7: -1 };
+const MINOR_DEGREE_OFFSETS: Record<number, number> = { 1: 0, 2: 2, 3: 3, 4: 5, 5: 7, 6: 8, 7: 10 };
+
+/**
+ * Root frequency for a scale degree in a song key ("C", "Em", "Bm"…), using
+ * the same tables the transpiler maps targets with — so free-play ("voice
+ * whatever my hands form") can always reach the chart's chords.
+ */
+export function degreeRootHz(songKey: string, degree: number): number | null {
+  const root = chordRootHz(songKey);
+  if (!root) return null;
+  const minor = /m$/.test(songKey);
+  const offsets = minor ? MINOR_DEGREE_OFFSETS : MAJOR_DEGREE_OFFSETS;
+  const semis = offsets[degree];
+  if (semis === undefined) return null;
+  return root * Math.pow(SEMI, semis);
 }
 
 /** Open-voicing triad for the backing pad (quality 1, world from the symbol). */

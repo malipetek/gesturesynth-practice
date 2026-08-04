@@ -13,7 +13,7 @@ const CHROME =
   process.env.CHROME_PATH ??
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const BASE = process.env.BASE_URL ?? 'http://localhost:4322';
-const SLUG = process.env.SLUG ?? 'twinkle';
+const SLUG = process.argv[2] ?? process.env.SLUG ?? 'twinkle';
 const COUNTIN_BEATS = 4;
 
 const song = JSON.parse(

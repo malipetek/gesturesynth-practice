@@ -107,7 +107,11 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  /* contain, not cover: the whole camera frame stays visible, so hands work
+     (and the skeleton shows) everywhere on screen — including the lower
+     region where hands naturally rest. Matches how gesturesynth.com maps the
+     full frame to volume. */
+  object-fit: contain;
   transform: scaleX(-1);
   filter: saturate(1.2) brightness(0.92);
 }
@@ -769,8 +773,9 @@ kbd {
 .playbar {
   position: relative;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 14px;
+  gap: 8px 12px;
   padding: 10px 4px 0;
   border-top: 1px solid var(--line);
   font-size: 0.82rem;
@@ -828,6 +833,34 @@ kbd {
   width: 72px;
   height: auto;
   color: var(--ice);
+}
+
+/* Voice behavior toggle (strict = on match / free = voice any gesture). */
+.voice-toggle {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.voice-toggle button {
+  padding: 6px 12px;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    color 0.15s,
+    background 0.15s;
+}
+
+.voice-toggle button.on {
+  background: var(--mint);
+  color: #0b1014;
 }
 
 /* Sound settings popover (Gesture Synth metronome options). */

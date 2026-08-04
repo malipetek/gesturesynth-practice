@@ -4,7 +4,7 @@ const CHROME =
   process.env.CHROME_PATH ??
   '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const BASE = process.env.BASE_URL ?? 'http://localhost:4322';
-const SLUG = process.env.SLUG ?? 'ode-to-joy';
+const SLUG = process.argv[2] ?? process.env.SLUG ?? 'ode-to-joy';
 const SLEEP = Number(process.env.SLEEP ?? 0);
 
 const logs = [];

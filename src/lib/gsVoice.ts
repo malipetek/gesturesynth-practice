@@ -41,12 +41,23 @@ export class GSVoice {
   private readonly sweepFilter: BiquadFilterNode;
   private readonly fixedFilter: BiquadFilterNode;
   private readonly master: GainNode;
+  private readonly limiter: DynamicsCompressorNode;
   private oscs: OscillatorNode[] = [];
   private currentKey: string | null = null;
   private metroSound: MetronomeSound = 'click';
   private metroVolume = CLICK_LEVEL;
 
   constructor(private readonly ctx: AudioContext) {
+    // Four summed sawtooths can exceed 0 dBFS (worst with bright octave-up
+    // voicings) — a fast limiter keeps the top end from cracking.
+    this.limiter = ctx.createDynamicsCompressor();
+    this.limiter.threshold.value = -10;
+    this.limiter.knee.value = 6;
+    this.limiter.ratio.value = 12;
+    this.limiter.attack.value = 0.002;
+    this.limiter.release.value = 0.12;
+    this.limiter.connect(ctx.destination);
+
     // Live path: oscillators → swept filter → master (wrist volume) → out
     this.sweepFilter = ctx.createBiquadFilter();
     this.sweepFilter.type = 'lowpass';
@@ -55,7 +66,7 @@ export class GSVoice {
     this.master = ctx.createGain();
     this.master.gain.value = 0;
     this.sweepFilter.connect(this.master);
-    this.master.connect(ctx.destination);
+    this.master.connect(this.limiter);
 
     // Scheduled path (listen-mode demo + backing pad): per-stab gain →
     // fixed 1200/0.7 filter → out
@@ -63,7 +74,7 @@ export class GSVoice {
     this.fixedFilter.type = 'lowpass';
     this.fixedFilter.frequency.value = FILTER_BASE_HZ;
     this.fixedFilter.Q.value = FILTER_BASE_Q;
-    this.fixedFilter.connect(ctx.destination);
+    this.fixedFilter.connect(this.limiter);
   }
 
   /** Sustained chord: one sawtooth per note, swapped only when notes change. */
@@ -109,10 +120,12 @@ export class GSVoice {
   /** One-shot scheduled chord (listen-mode demo stabs, backing pad). */
   stab(freqs: number[], time: number, duration: number, peak: number): void {
     const end = time + duration;
+    // Normalize by note count so 4-note voicings don't stack into clipping.
+    const level = peak / Math.max(1, freqs.length / 2);
     const gain = this.ctx.createGain();
     gain.gain.setValueAtTime(0, time);
-    gain.gain.linearRampToValueAtTime(peak, time + STAB_ATTACK_S);
-    gain.gain.setValueAtTime(peak, Math.max(time + STAB_ATTACK_S, end - STAB_ATTACK_S));
+    gain.gain.linearRampToValueAtTime(level, time + STAB_ATTACK_S);
+    gain.gain.setValueAtTime(level, Math.max(time + STAB_ATTACK_S, end - STAB_ATTACK_S));
     gain.gain.linearRampToValueAtTime(0, end);
     gain.connect(this.fixedFilter);
     for (const f of freqs) {
@@ -215,6 +228,7 @@ export class GSVoice {
     this.master.disconnect();
     this.sweepFilter.disconnect();
     this.fixedFilter.disconnect();
+    this.limiter.disconnect();
   }
 
   /** Run a callback after an AudioContext-time deadline (node cleanup). */
