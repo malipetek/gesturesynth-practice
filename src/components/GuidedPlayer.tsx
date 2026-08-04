@@ -13,7 +13,7 @@ import './Player.css';
 const SECTION_BARS = 2;
 const HOLD_MS = 350;
 const ADVANCE_MS = 650;
-const THUMB_HOLD_MS = 600;
+const THUMB_HOLD_MS = 800;
 
 const STATUS_LABEL: Record<TrackingStatus, string> = {
   idle: 'Waiting for camera…',
@@ -122,6 +122,7 @@ export default function GuidedPlayer({
   const [thumbPct, setThumbPct] = useState(0);
   // Live wrist tilts for the guide gauges (left = major/minor aim, right = tone).
   const [tilts, setTilts] = useState({ left: 0, right: 0 });
+  const [thumbDebug, setThumbDebug] = useState<string | null>(null); // TEMP
 
   const section = sections[sectionIdx];
   const current: SectionEvent | null = phase === 'stepping' ? section?.events[stepIdx] ?? null : null;
@@ -294,6 +295,32 @@ export default function GuidedPlayer({
       const ql = Math.round((lmk?.left ? wristTilt(lmk.left, 'Left') : 0) * 25) / 25;
       const qr = Math.round((lmk?.right ? wristTilt(lmk.right, 'Right') : 0) * 25) / 25;
       setTilts((p) => (p.left === ql && p.right === qr ? p : { left: ql, right: qr }));
+
+      // TEMP debug: publish live thumb geometry for the on-screen readout.
+      {
+        const rl = lmk?.right ?? null;
+        let dbg: string | null = null;
+        let firing = false;
+        if (rl && rl.length >= 21) {
+          const w = rl[0];
+          const dx = Math.abs(rl[4].x - rl[3].x);
+          const dy = Math.abs(rl[4].y - rl[3].y);
+          const trise = dy / (dx + 1e-6);
+          const ratio = (pip: number, tip: number) => {
+            const dTip = Math.hypot(rl[tip].x - w.x, rl[tip].y - w.y);
+            const dPip = Math.hypot(rl[pip].x - w.x, rl[pip].y - w.y);
+            return dTip / dPip;
+          };
+          firing = isThumbsUp(rl);
+          dbg = `trise ${trise.toFixed(2)} · curl ${[ratio(6, 8), ratio(10, 12), ratio(14, 16), ratio(18, 20)]
+            .map((r) => r.toFixed(2))
+            .join('/')}`;
+        }
+        setThumbDebug((prev) => {
+          const next = dbg ? `${firing ? '🔥 ' : ''}${dbg}` : null;
+          return prev === next ? prev : next;
+        });
+      }
 
       if (phaseRef.current !== 'stepping') {
         if (reportRef.current) reportRef.current = null;
@@ -475,6 +502,11 @@ export default function GuidedPlayer({
                 </span>
               </span>
             </div>
+            {thumbDebug && (
+              <p className="thumb-debug" aria-hidden="true">
+                {thumbDebug}
+              </p>
+            )}
           </section>
 
           <div className="chart guided-chart">
