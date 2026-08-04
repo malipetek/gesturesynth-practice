@@ -305,12 +305,12 @@ export default function GuidedPlayer({ song, onExit }: { song: Song; onExit: () 
                 <HandShape
                   side="left"
                   fingers={DEGREE_FINGERS[target.degree]}
-                  tiltDeg={target.world === 'minor' ? -18 : 18}
+                  tiltDeg={target.world === 'minor' ? 18 : -18}
                   color={degreeColor}
                 />
                 <p className="hand-caption">
                   <strong>Left</strong> · {DEGREE_LABELS[target.degree]} · tilt{' '}
-                  {target.world === 'minor' ? 'left' : 'right'} ({target.world})
+                  {target.world === 'minor' ? 'right' : 'left'} ({target.world})
                 </p>
               </div>
               <div className="guide-hand">

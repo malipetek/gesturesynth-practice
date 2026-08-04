@@ -37,7 +37,7 @@ export function qualityFingers(quality: number, octaveUp: boolean): FingerSet {
 interface HandShapeProps {
   side: 'left' | 'right';
   fingers: FingerSet;
-  /** Rotation in degrees, as seen in the mirrored view (left hand: +major / −minor). */
+  /** Rotation in degrees, as seen in the mirrored view (left hand: −major / +minor). */
   tiltDeg?: number;
   /** CSS color for raised fingers. */
   color: string;

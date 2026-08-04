@@ -24,6 +24,8 @@ the left (landmarks 4 and 3).
   - **VI** = index + pinky raised, middle + ring down, thumb down
   - **VII** = index + pinky raised, middle + ring down, thumb up
 - World (major/minor): wrist tilt — `middleMCP.x > wrist.x` ⇒ minor, else major.
+  In the mirrored selfie view this reads as: left-hand fingers leaning **right** ⇒
+  minor, leaning **left** ⇒ major (verified with real-hands testing).
 
 On-screen help text: *"Raise fingers to pick a scale degree (I–V). Index + pinky makes
 VI; add the thumb for VII. By default, tilt flips major ↔ minor."*
