@@ -531,7 +531,17 @@ export default function Player({ song }: { song: Song }) {
   }, [song]);
 
   if (guidedActive && state.mode === 'track') {
-    return <GuidedPlayer song={song} onExit={() => setGuidedActive(false)} />;
+    return (
+      <GuidedPlayer
+        song={song}
+        onExit={() => setGuidedActive(false)}
+        onStartTimed={() => {
+          setGuidedActive(false);
+          setFlow('timed');
+          start();
+        }}
+      />
+    );
   }
 
   const total = song.events.length;

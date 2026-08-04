@@ -88,7 +88,15 @@ export function voicingNotes(
       notes = [rootHz, fifth, rootHz * 2, third * 2];
   }
   const mul = Math.pow(2, octaveShift);
-  return notes.map((f) => f * mul);
+  // The instrument's playable-range guard: anything above 2000 Hz is dropped
+  // down octaves until it fits. Applied here — the single place both the
+  // live (hand-played) and scheduled (listed-note) paths voice through — so
+  // both stay in the same register.
+  return notes.map((f) => {
+    let out = f * mul;
+    while (out > 2000) out /= 2;
+    return out;
+  });
 }
 
 export function targetNotes(target: GestureTarget, chordName: string): number[] {

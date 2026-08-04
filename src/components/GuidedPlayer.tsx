@@ -5,6 +5,7 @@ import { DEGREE_LABELS } from '../lib/types';
 import type { TrackingStatus } from '../lib/useHandTracking';
 import { compareFrame, qualityLabel, targetNotes } from '../lib/match';
 import { audioContextFromTone, GSVoice } from '../lib/gsVoice';
+import { isFingerUp, isThumbExtended, type Finger } from '../lib/gesture';
 import { Tracker, type TrackerBridge } from './Tracker';
 import { DEGREE_FINGERS, HandShape, qualityFingers } from './HandShape';
 import './Player.css';
@@ -12,6 +13,7 @@ import './Player.css';
 const SECTION_BARS = 2;
 const HOLD_MS = 350;
 const ADVANCE_MS = 650;
+const THUMB_HOLD_MS = 600;
 
 const STATUS_LABEL: Record<TrackingStatus, string> = {
   idle: 'Waiting for camera…',
@@ -64,7 +66,15 @@ function reportSig(r: MatchReport | null): string {
 }
 
 
-export default function GuidedPlayer({ song, onExit }: { song: Song; onExit: () => void }) {
+export default function GuidedPlayer({
+  song,
+  onExit,
+  onStartTimed,
+}: {
+  song: Song;
+  onExit: () => void;
+  onStartTimed?: () => void;
+}) {
   const sections = useMemo(() => buildSections(song), [song]);
 
   const [phase, setPhase] = useState<GuidedPhase>('stepping');
@@ -76,6 +86,7 @@ export default function GuidedPlayer({ song, onExit }: { song: Song; onExit: () 
   const [records, setRecords] = useState<StepRecord[][]>([]);
   const [trackingStatus, setTrackingStatus] = useState<TrackingStatus>('idle');
   const [trackingError, setTrackingError] = useState<string | null>(null);
+  const [thumbPct, setThumbPct] = useState(0);
 
   const section = sections[sectionIdx];
   const current: SectionEvent | null = phase === 'stepping' ? section?.events[stepIdx] ?? null : null;
@@ -95,6 +106,7 @@ export default function GuidedPlayer({ song, onExit }: { song: Song; onExit: () 
   const reportRef = useRef<MatchReport | null>(null);
   const targetRef = useRef<GestureTarget | null>(null);
   const holdSinceRef = useRef<number | null>(null);
+  const thumbSinceRef = useRef<number | null>(null);
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stepStartedAtRef = useRef<number>(performance.now());
   const reportStateSigRef = useRef('');
@@ -164,6 +176,26 @@ export default function GuidedPlayer({ song, onExit }: { song: Song; onExit: () 
     advance();
   }, [advance, recordStep]);
 
+  // Thumbs-up during stepping: close out the section, counting the remaining
+  // chords as skipped, and show the section-complete (or final done) screen.
+  const skipRestOfSection = useCallback(() => {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+    const s = sectionIdxRef.current;
+    const total = sectionsRef.current[s].events.length;
+    setRecords((prev) => {
+      const next = prev.map((r) => r.slice());
+      if (!next[s]) next[s] = [];
+      for (let i = stepIdxRef.current; i < total; i++) next[s][i] = { skipped: true, ms: 0 };
+      return next;
+    });
+    voiceRef.current?.stopAll();
+    holdSinceRef.current = null;
+    setPhase(s + 1 < sectionsRef.current.length ? 'section-done' : 'done');
+  }, []);
+
   const repeatSection = useCallback(() => {
     voiceRef.current?.stopAll();
     holdSinceRef.current = null;
@@ -195,6 +227,34 @@ export default function GuidedPlayer({ song, onExit }: { song: Song; onExit: () 
     let raf = 0;
     const loop = () => {
       raf = requestAnimationFrame(loop);
+
+      // 👍 Thumbs-up = skip to the next section. A right hand with the thumb
+      // out and all four fingers folded can never be a chord shape (quality
+      // needs 1–4 fingers), so the gesture is unambiguous.
+      const ph = phaseRef.current;
+      if (ph === 'stepping' || ph === 'section-done') {
+        const rlm = frameBridge.current.landmarksRef?.current?.right ?? null;
+        const up =
+          !!rlm &&
+          isThumbExtended(rlm, 'Right') &&
+          !(['index', 'middle', 'ring', 'pinky'] as Finger[]).some((f) => isFingerUp(rlm, f));
+        if (up) {
+          if (thumbSinceRef.current === null) thumbSinceRef.current = performance.now();
+          const heldMs = performance.now() - thumbSinceRef.current;
+          const pct = Math.min(100, Math.round((heldMs / THUMB_HOLD_MS) * 100));
+          setThumbPct((p) => (p === pct ? p : pct));
+          if (heldMs >= THUMB_HOLD_MS) {
+            thumbSinceRef.current = null;
+            setThumbPct(0);
+            if (ph === 'stepping') skipRestOfSection();
+            else nextSection();
+          }
+        } else if (thumbSinceRef.current !== null) {
+          thumbSinceRef.current = null;
+          setThumbPct(0);
+        }
+      }
+
       if (phaseRef.current !== 'stepping') {
         if (reportRef.current) reportRef.current = null;
         return;
@@ -239,7 +299,7 @@ export default function GuidedPlayer({ song, onExit }: { song: Song; onExit: () 
       cancelAnimationFrame(raf);
       voiceRef.current?.stopAll();
     };
-  }, [recordStep, scheduleAdvance]);
+  }, [recordStep, scheduleAdvance, skipRestOfSection, nextSection]);
 
   // Escape exits guided practice.
   useEffect(() => {
@@ -363,6 +423,12 @@ export default function GuidedPlayer({ song, onExit }: { song: Song; onExit: () 
               <button type="button" className="guide-skip" onClick={skip}>
                 Skip this chord →
               </button>
+              <span className={`thumb-hint${thumbPct > 0 ? ' active' : ''}`}>
+                👍 hold to skip section
+                <span className="thumb-meter" aria-hidden="true">
+                  <i style={{ width: `${thumbPct}%` }} />
+                </span>
+              </span>
             </div>
           </section>
 
@@ -439,6 +505,12 @@ export default function GuidedPlayer({ song, onExit }: { song: Song; onExit: () 
               Repeat this section
             </button>
           </div>
+          <p className={`thumb-hint${thumbPct > 0 ? ' active' : ''}`}>
+            👍 or hold a thumbs-up for the next section
+            <span className="thumb-meter" aria-hidden="true">
+              <i style={{ width: `${thumbPct}%` }} />
+            </span>
+          </p>
         </section>
       )}
 
@@ -451,6 +523,11 @@ export default function GuidedPlayer({ song, onExit }: { song: Song; onExit: () 
             {Math.round(totalMs / 1000)}s of hands-on time.
           </p>
           <div className="done-actions">
+            {onStartTimed && (
+              <button type="button" className="start-btn timed-offer" onClick={onStartTimed}>
+                Try a timed run →
+              </button>
+            )}
             <button
               type="button"
               className="start-btn"

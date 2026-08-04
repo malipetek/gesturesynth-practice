@@ -26,6 +26,12 @@ const FILTER_SMOOTH_S = 0.04;
 const VOLUME_RAMP_S = 0.05;
 const CLICK_LEVEL = 0.25;
 const STAB_ATTACK_S = 0.006;
+// Live-path level staging: four full-amplitude saws sum to ±4, so the wrist
+// gain is scaled to peak ≈ 0.36 at full volume — the same level the
+// scheduled stabs hit — so both paths drive the shared limiter identically
+// (compression IS timbre; mismatched staging made hands vs listed notes
+// sound like different instruments).
+const LIVE_LEVEL = 0.3;
 
 export type MetronomeSound = 'click' | 'wood' | 'beep' | 'hihat';
 
@@ -39,8 +45,8 @@ export function audioContextFromTone(getContext: () => unknown): AudioContext {
 
 export class GSVoice {
   private readonly sweepFilter: BiquadFilterNode;
-  private readonly fixedFilter: BiquadFilterNode;
-  private readonly master: GainNode;
+  private readonly liveGain: GainNode;
+  private readonly bus: GainNode;
   private readonly limiter: DynamicsCompressorNode;
   private oscs: OscillatorNode[] = [];
   private currentKey: string | null = null;
@@ -58,23 +64,23 @@ export class GSVoice {
     this.limiter.release.value = 0.12;
     this.limiter.connect(ctx.destination);
 
-    // Live path: oscillators → swept filter → master (wrist volume) → out
+    // ONE shared tone path for everything melodic: live chord and scheduled
+    // stabs both go through the same swept lowpass, so listed notes and
+    // hand-played notes are literally the same instrument.
+    //
+    //   live oscs → liveGain (wrist volume) ┐
+    //   stab oscs → per-stab envelope      ─┴→ sweepFilter → bus → limiter
     this.sweepFilter = ctx.createBiquadFilter();
     this.sweepFilter.type = 'lowpass';
     this.sweepFilter.frequency.value = FILTER_BASE_HZ;
     this.sweepFilter.Q.value = FILTER_BASE_Q;
-    this.master = ctx.createGain();
-    this.master.gain.value = 0;
-    this.sweepFilter.connect(this.master);
-    this.master.connect(this.limiter);
-
-    // Scheduled path (listen-mode demo + backing pad): per-stab gain →
-    // fixed 1200/0.7 filter → out
-    this.fixedFilter = ctx.createBiquadFilter();
-    this.fixedFilter.type = 'lowpass';
-    this.fixedFilter.frequency.value = FILTER_BASE_HZ;
-    this.fixedFilter.Q.value = FILTER_BASE_Q;
-    this.fixedFilter.connect(this.limiter);
+    this.bus = ctx.createGain();
+    this.bus.gain.value = 1;
+    this.sweepFilter.connect(this.bus);
+    this.bus.connect(this.limiter);
+    this.liveGain = ctx.createGain();
+    this.liveGain.gain.value = 0;
+    this.liveGain.connect(this.sweepFilter);
   }
 
   /** Sustained chord: one sawtooth per note, swapped only when notes change. */
@@ -87,17 +93,20 @@ export class GSVoice {
       const osc = this.ctx.createOscillator();
       osc.type = 'sawtooth';
       osc.frequency.value = f;
-      osc.connect(this.sweepFilter);
+      osc.connect(this.liveGain);
       osc.start();
       return osc;
     });
     this.currentKey = key;
   }
 
-  /** Master volume 0..1 (right-wrist height), 50 ms linear ramp. */
+  /** Right-wrist height → chord volume (50 ms ramp, staged to stab level). */
   setVolume(volume: number): void {
     const clamped = Math.max(0, Math.min(1, volume));
-    this.master.gain.linearRampToValueAtTime(clamped, this.ctx.currentTime + VOLUME_RAMP_S);
+    this.liveGain.gain.linearRampToValueAtTime(
+      clamped * LIVE_LEVEL,
+      this.ctx.currentTime + VOLUME_RAMP_S,
+    );
   }
 
   /** Lowpass sweep from right-wrist lateral lean, −1..1. */
@@ -127,7 +136,7 @@ export class GSVoice {
     gain.gain.linearRampToValueAtTime(level, time + STAB_ATTACK_S);
     gain.gain.setValueAtTime(level, Math.max(time + STAB_ATTACK_S, end - STAB_ATTACK_S));
     gain.gain.linearRampToValueAtTime(0, end);
-    gain.connect(this.fixedFilter);
+    gain.connect(this.sweepFilter);
     for (const f of freqs) {
       const osc = this.ctx.createOscillator();
       osc.type = 'sawtooth';
@@ -225,9 +234,9 @@ export class GSVoice {
 
   dispose(): void {
     this.stopAll();
-    this.master.disconnect();
+    this.liveGain.disconnect();
+    this.bus.disconnect();
     this.sweepFilter.disconnect();
-    this.fixedFilter.disconnect();
     this.limiter.disconnect();
   }
 

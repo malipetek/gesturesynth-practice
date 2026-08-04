@@ -348,6 +348,49 @@
   text-align: center;
 }
 
+/* Thumbs-up section-skip hint + hold meter (guided mode). */
+
+.thumb-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+p.thumb-hint {
+  margin: 12px 0 0;
+  justify-content: center;
+}
+
+.thumb-hint.active {
+  color: var(--gold);
+}
+
+.thumb-meter {
+  display: inline-block;
+  width: 56px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(232, 244, 248, 0.12);
+  overflow: hidden;
+}
+
+.thumb-meter i {
+  display: block;
+  height: 100%;
+  background: var(--gold);
+  transition: width 60ms linear;
+}
+
+/* Done-screen offer to graduate to the timed run — gold, a step up from mint. */
+
+.start-btn.timed-offer {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #241a05;
+}
+
 .guide-actions {
   display: flex;
   justify-content: flex-end;
