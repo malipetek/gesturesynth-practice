@@ -5,7 +5,7 @@ import { DEGREE_LABELS } from '../lib/types';
 import type { TrackingStatus } from '../lib/useHandTracking';
 import { compareFrame, qualityLabel, targetNotes } from '../lib/match';
 import { audioContextFromTone, GSVoice } from '../lib/gsVoice';
-import { isThumbsUp } from '../lib/gesture';
+import { isThumbsUp, wristTilt } from '../lib/gesture';
 import { Tracker, type TrackerBridge } from './Tracker';
 import { DEGREE_FINGERS, HandShape, qualityFingers } from './HandShape';
 import './Player.css';
@@ -65,6 +65,39 @@ function reportSig(r: MatchReport | null): string {
   return r ? `${r.degree}${r.world}${r.quality}${r.octave}` : '';
 }
 
+/**
+ * Live wrist-tilt gauge. The needle FOLLOWS the mirrored camera view (lean
+ * left → needle left), so for the left hand "major" sits on the left end and
+ * "minor" on the right — matching the guide caption. `want` shades the half
+ * the current chord needs; the needle turns mint once inside it.
+ */
+function TiltGauge({
+  value,
+  want,
+  endLabels,
+}: {
+  value: number;
+  want: 'major' | 'minor' | null;
+  endLabels: [string, string] | null;
+}) {
+  const inZone = want ? (want === 'major' ? value >= 0 : value < 0) : false;
+  return (
+    <div className="tilt-gauge">
+      {endLabels && <span className="tilt-word">{endLabels[0]}</span>}
+      <span className="tilt-track">
+        <i className={`half l${want === 'major' ? ' want' : ''}`} />
+        <i className={`half r${want === 'minor' ? ' want' : ''}`} />
+        <i className="tilt-deadzone" />
+        <i
+          className={`tilt-needle${want ? (inZone ? ' good' : ' off') : ''}`}
+          style={{ left: `${50 - value * 50}%` }}
+        />
+      </span>
+      {endLabels && <span className="tilt-word">{endLabels[1]}</span>}
+    </div>
+  );
+}
+
 
 export default function GuidedPlayer({
   song,
@@ -87,6 +120,8 @@ export default function GuidedPlayer({
   const [trackingStatus, setTrackingStatus] = useState<TrackingStatus>('idle');
   const [trackingError, setTrackingError] = useState<string | null>(null);
   const [thumbPct, setThumbPct] = useState(0);
+  // Live wrist tilts for the guide gauges (left = major/minor aim, right = tone).
+  const [tilts, setTilts] = useState({ left: 0, right: 0 });
 
   const section = sections[sectionIdx];
   const current: SectionEvent | null = phase === 'stepping' ? section?.events[stepIdx] ?? null : null;
@@ -253,6 +288,13 @@ export default function GuidedPlayer({
         }
       }
 
+      // Live tilt readouts for the guide gauges (quantized — re-render at
+      // most ~50/side per second, only on change).
+      const lmk = frameBridge.current.landmarksRef?.current;
+      const ql = Math.round((lmk?.left ? wristTilt(lmk.left, 'Left') : 0) * 25) / 25;
+      const qr = Math.round((lmk?.right ? wristTilt(lmk.right, 'Right') : 0) * 25) / 25;
+      setTilts((p) => (p.left === ql && p.right === qr ? p : { left: ql, right: qr }));
+
       if (phaseRef.current !== 'stepping') {
         if (reportRef.current) reportRef.current = null;
         return;
@@ -366,6 +408,7 @@ export default function GuidedPlayer({
                   tiltDeg={target.world === 'minor' ? 18 : -18}
                   color={degreeColor}
                 />
+                <TiltGauge value={tilts.left} want={target.world} endLabels={['major', 'minor']} />
                 <p className="hand-caption">
                   <strong>Left</strong> · {DEGREE_LABELS[target.degree]} · tilt{' '}
                   {target.world === 'minor' ? 'right' : 'left'} ({target.world})
@@ -377,9 +420,13 @@ export default function GuidedPlayer({
                   fingers={qualityFingers(target.quality, target.octave !== 0)}
                   color="rgb(255, 107, 90)"
                 />
+                {/* Sign-flipped so the needle follows the right hand in the
+                    mirror AND bright lands on the right end (their mapping:
+                    wrist leaning screen-right = brighter). */}
+                <TiltGauge value={-tilts.right} want={null} endLabels={['dark', 'bright']} />
                 <p className="hand-caption">
                   <strong>Right</strong> · {qualityLabel(target.world, target.quality)} · thumb{' '}
-                  {target.octave === 0 ? 'in (base)' : 'out (−8ve)'}
+                  {target.octave === 0 ? 'in (base)' : 'out (−8ve)'} · tone free
                 </p>
               </div>
             </div>

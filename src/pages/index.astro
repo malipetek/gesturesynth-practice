@@ -1,5 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
+import CustomSongList from '../components/CustomSongList';
 import { getSongs } from '../lib/songs';
 import type { Song } from '../lib/types';
 
@@ -49,6 +50,29 @@ const barCount = (song: Song) => song.events.reduce((max, e) => Math.max(max, e.
 			</div>
 		</div>
 	</section>
+
+	<section class="tools container">
+		<div class="grid grid-2">
+			<a class="card song-card tool-card" href="/freeform">
+				<p class="song-title">Freeform instrument</p>
+				<p class="song-artist">The gesturesynth.com instrument — play anything</p>
+				<div class="song-meta">
+					<span class="tag"><span class="dot">&#9679;</span> any key</span>
+					<span class="tag">gesture + theremin</span>
+				</div>
+			</a>
+			<a class="card song-card tool-card" href="/import">
+				<p class="song-title">Add your own song</p>
+				<p class="song-artist">Have the chords? Practice them here</p>
+				<div class="song-meta">
+					<span class="tag">ChordPro paste</span>
+					<span class="tag">saved in this browser</span>
+				</div>
+			</a>
+		</div>
+	</section>
+
+	<CustomSongList client:only="react" />
 
 	<section class="songbook container">
 		<div class="songbook-head">

@@ -1,0 +1,22 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ImportSong from '../components/ImportSong';
+---
+
+<Layout
+	title="Add your own song | Gesture Synth Practice"
+	description="Paste chords in ChordPro notation and practice your own song on Gesture Synth."
+>
+	<section class="song-header container">
+		<a class="back muted" href="/">&#8592; Songbook</a>
+		<h1 class="page-title">Add your own song</h1>
+		<p class="muted page-lede">
+			Paste the chords below — the app turns them into gesture targets and saves the song in
+			this browser.
+		</p>
+	</section>
+
+	<section class="container">
+		<ImportSong client:only="react" />
+	</section>
+</Layout>

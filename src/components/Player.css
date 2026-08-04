@@ -348,6 +348,78 @@
   text-align: center;
 }
 
+/* Live wrist-tilt gauges in the guided card (left: major/minor aim;
+   right: free tone readout). */
+
+.tilt-gauge {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 7px 0 2px;
+}
+
+.tilt-word {
+  font-size: 0.62rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted);
+  min-width: 34px;
+  text-align: center;
+}
+
+.tilt-track {
+  position: relative;
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(232, 244, 248, 0.08);
+  overflow: hidden;
+}
+
+.tilt-track .half {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50%;
+}
+
+.tilt-track .half.l {
+  left: 0;
+}
+
+.tilt-track .half.r {
+  right: 0;
+}
+
+.tilt-track .half.want {
+  background: rgba(240, 198, 90, 0.22);
+}
+
+.tilt-deadzone {
+  position: absolute;
+  left: 44%;
+  width: 12%;
+  top: 0;
+  bottom: 0;
+  background: rgba(232, 244, 248, 0.1);
+}
+
+.tilt-needle {
+  position: absolute;
+  top: -1px;
+  width: 3px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--coral, #ff6b5a);
+  transform: translateX(-50%);
+  transition: left 50ms linear;
+}
+
+.tilt-needle.good {
+  background: var(--mint);
+  box-shadow: 0 0 8px rgba(61, 255, 224, 0.7);
+}
+
 /* Thumbs-up section-skip hint + hold meter (guided mode). */
 
 .thumb-hint {

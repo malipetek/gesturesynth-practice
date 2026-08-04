@@ -13,7 +13,6 @@ import {
 import { loadSettings, saveSettings, type PracticeSettings } from '../lib/settings';
 import { Tracker, type TrackerBridge } from './Tracker';
 import GuidedPlayer from './GuidedPlayer';
-import FreeformPlayer from './FreeformPlayer';
 import { DEGREE_FINGERS, HandShape, qualityFingers } from './HandShape';
 import type { MatchReport, Song, SongEvent } from '../lib/types';
 import { DEGREE_LABELS } from '../lib/types';
@@ -307,11 +306,10 @@ export default function Player({ song }: { song: Song }) {
     saveSettings(settings);
   }, [settings]);
   // Practice flow: guided = step through short sections at your own pace
-  // (default, easiest); timed = full song with the backing track;
-  // freeform = the raw instrument, no chart (same engine as gesturesynth.com).
-  const [flow, setFlow] = useState<'guided' | 'timed' | 'freeform'>('guided');
+  // (default, easiest); timed = full song with the backing track.
+  // (Freeform play lives on the homepage's /freeform page, not per song.)
+  const [flow, setFlow] = useState<'guided' | 'timed'>('guided');
   const [guidedActive, setGuidedActive] = useState(false);
-  const [freeformActive, setFreeformActive] = useState(false);
   const flowRef = useRef(flow);
   const guidedActiveRef = useRef(guidedActive);
   useEffect(() => {
@@ -462,8 +460,6 @@ export default function Player({ song }: { song: Song }) {
         if (stateRef.current.mode === 'track' && statusRef.current !== 'ready') return;
         if (stateRef.current.mode === 'track' && flowRef.current === 'guided') {
           setGuidedActive(true);
-        } else if (stateRef.current.mode === 'track' && flowRef.current === 'freeform') {
-          setFreeformActive(true);
         } else {
           start();
         }
@@ -549,10 +545,6 @@ export default function Player({ song }: { song: Song }) {
     );
   }
 
-  if (freeformActive && state.mode === 'track') {
-    return <FreeformPlayer song={song} onExit={() => setFreeformActive(false)} />;
-  }
-
   const total = song.events.length;
   const accuracy = total > 0 ? Math.round((state.hits / total) * 100) : 0;
   const volumePct = Math.round((state.volume ?? 0) * 100);
@@ -593,9 +585,7 @@ export default function Player({ song }: { song: Song }) {
           <p className="lede">
             {state.mode === 'track' && flow === 'guided'
               ? 'Learn the song in short sections — each chord waits for you.'
-              : state.mode === 'track' && flow === 'freeform'
-                ? 'The raw instrument — play anything in this song’s key.'
-                : 'Match both hands to each chord target as the song plays.'}
+              : 'Match both hands to each chord target as the song plays.'}
           </p>
           {state.mode === 'track' && (
             <div className="mode-toggle flow-toggle" role="group" aria-label="Practice flow">
@@ -612,14 +602,6 @@ export default function Player({ song }: { song: Song }) {
                 onClick={() => setFlow('timed')}
               >
                 Timed run
-              </button>
-              <button
-                type="button"
-                className={flow === 'freeform' ? 'on' : ''}
-                title="The gesturesynth.com instrument itself — no chart, no score"
-                onClick={() => setFlow('freeform')}
-              >
-                Freeform
               </button>
             </div>
           )}
@@ -654,21 +636,13 @@ export default function Player({ song }: { song: Song }) {
             type="button"
             className="start-btn"
             disabled={!canStart}
-            onClick={
-              state.mode === 'track' && flow === 'guided'
-                ? () => setGuidedActive(true)
-                : state.mode === 'track' && flow === 'freeform'
-                  ? () => setFreeformActive(true)
-                  : start
-            }
+            onClick={state.mode === 'track' && flow === 'guided' ? () => setGuidedActive(true) : start}
           >
             {state.mode === 'listen'
               ? 'Start listening'
               : flow === 'guided'
                 ? 'Start guided practice'
-                : flow === 'freeform'
-                  ? 'Start freeform'
-                  : 'Start practicing'}
+                : 'Start practicing'}
           </button>
           <p className="hint">
             Press <kbd>Space</kbd> to start / stop

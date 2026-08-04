@@ -146,11 +146,178 @@ a.card:hover {
   grid-template-columns: repeat(3, 1fr);
 }
 
+.grid-2 {
+  grid-template-columns: repeat(2, 1fr);
+}
+
 @media (max-width: 760px) {
-  .grid-3 {
+  .grid-3,
+  .grid-2 {
     grid-template-columns: 1fr;
   }
 }
+
+/* Homepage tool cards (Freeform / Add your own song) — gold accents to
+   distinguish them from songbook entries. */
+
+.tools {
+  margin-bottom: 2.5rem;
+}
+
+.tool-card {
+  border-color: rgba(240, 198, 90, 0.35);
+  background: linear-gradient(180deg, rgba(240, 198, 90, 0.06), transparent 60%);
+}
+
+.tool-card:hover {
+  border-color: var(--gold);
+}
+
+/* Custom (user-imported) song cards: the whole card is a link, with a
+   small delete button pinned top-right. */
+
+.custom-card {
+  position: relative;
+  padding: 0;
+}
+
+.custom-card .custom-link {
+  display: block;
+  padding: inherit;
+  color: inherit;
+  text-decoration: none;
+}
+
+.custom-del {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  width: 1.7rem;
+  height: 1.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.custom-del:hover {
+  color: var(--coral, #ff6b5a);
+  border-color: var(--coral, #ff6b5a);
+}
+
+/* Import page */
+
+.page-title {
+  margin: 0 0 0.3rem;
+}
+
+.page-lede {
+  margin: 0 0 1.5rem;
+}
+
+.import-text {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0c1218;
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 1rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.import-text:focus {
+  outline: none;
+  border-color: var(--mint);
+}
+
+.import-help {
+  margin: 0.8rem 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
+.import-help summary {
+  cursor: pointer;
+  color: var(--mint);
+}
+
+.import-help code {
+  background: rgba(232, 244, 248, 0.08);
+  border-radius: 5px;
+  padding: 0.1rem 0.35rem;
+}
+
+.import-errors {
+  margin: 0.8rem 0;
+  padding: 0.8rem 1rem;
+  border: 1px solid rgba(255, 107, 90, 0.5);
+  border-radius: 10px;
+  color: var(--coral, #ff6b5a);
+  font-size: 0.88rem;
+  list-style: none;
+}
+
+.import-errors li + li {
+  margin-top: 0.3rem;
+}
+
+.import-preview {
+  margin-top: 1rem;
+  border: 1px solid rgba(61, 255, 224, 0.35);
+  border-radius: 12px;
+  padding: 1rem 1.2rem;
+}
+
+.import-preview-title {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 0.2rem;
+}
+
+.import-chords {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+.import-preview .start-btn {
+  margin-top: 0.6rem;
+}
+
+/* Freeform key picker */
+
+.key-picker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: center;
+  margin: 0.4rem 0 1.2rem;
+}
+
+.key-picker button {
+  min-width: 2.6rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.key-picker button.on {
+  background: var(--mint);
+  border-color: var(--mint);
+  color: #08231d;
+  font-weight: 600;
+}
+
 
 .tag {
   display: inline-flex;

@@ -1,0 +1,18 @@
+---
+import Layout from '../layouts/Layout.astro';
+import FreeformPage from '../components/FreeformPage';
+---
+
+<Layout
+	title="Freeform instrument | Gesture Synth Practice"
+	description="Play the Gesture Synth instrument freely — any chord, any key, no chart, no score."
+>
+	<section class="song-header container">
+		<a class="back muted" href="/">&#8592; Songbook</a>
+		<h1 class="visually-hidden">Freeform instrument</h1>
+	</section>
+
+	<section class="song-stage container">
+		<FreeformPage client:only="react" />
+	</section>
+</Layout>

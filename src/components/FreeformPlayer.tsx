@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import * as Tone from 'tone';
-import type { GestureTarget, MatchReport, Song } from '../lib/types';
+import type { GestureTarget, MatchReport } from '../lib/types';
 import { DEGREE_LABELS } from '../lib/types';
 import type { TrackingStatus } from '../lib/useHandTracking';
 import { degreeRootHz, qualityLabel, voicingNotes } from '../lib/match';
@@ -51,7 +51,13 @@ const IDLE_HUD: Hud = {
  * hands form in the song's key; theremin mode is their second instrument
  * (left hand = volume, right hand = pitch).
  */
-export default function FreeformPlayer({ song, onExit }: { song: Song; onExit: () => void }) {
+export default function FreeformPlayer({
+  songKey,
+  onExit,
+}: {
+  songKey: string;
+  onExit: () => void;
+}) {
   const [mode, setMode] = useState<'gesture' | 'theremin'>('gesture');
   const [hud, setHud] = useState<Hud>(IDLE_HUD);
   const [trackingStatus, setTrackingStatus] = useState<TrackingStatus>('idle');
@@ -66,14 +72,14 @@ export default function FreeformPlayer({ song, onExit }: { song: Song; onExit: (
   modeRef.current = mode;
   const hudKeyRef = useRef('');
 
-  // Scale guide for the song's key (their ScaleGuide: I–VII with note names).
+  // Scale guide for the chosen key (their ScaleGuide: I–VII with note names).
   const scale = useMemo(
     () =>
       [1, 2, 3, 4, 5, 6, 7].map((d) => {
-        const hz = degreeRootHz(song.key, d);
+        const hz = degreeRootHz(songKey, d);
         return { d, roman: DEGREE_LABELS[d], note: hz ? noteName(hz) : '?' };
       }),
-    [song.key],
+    [songKey],
   );
 
   // Voice lifecycle (same pattern as GuidedPlayer).
@@ -113,7 +119,7 @@ export default function FreeformPlayer({ song, onExit }: { song: Song; onExit: (
         const vol = frame?.right?.volume ?? 0;
         const tone = frame?.right?.tone ?? 0;
         if (frame?.right) voice.updateFilterSweep(tone);
-        const root = deg !== null ? degreeRootHz(song.key, deg) : null;
+        const root = deg !== null ? degreeRootHz(songKey, deg) : null;
         if (root && world && qual) {
           voice.playNotes(voicingNotes(root, world, qual, oct));
           voice.setVolume(vol);
@@ -149,7 +155,7 @@ export default function FreeformPlayer({ song, onExit }: { song: Song; onExit: (
       cancelAnimationFrame(raf);
       voiceRef.current?.stopAll();
     };
-  }, [song]);
+  }, [songKey]);
 
   // Escape exits.
   useEffect(() => {
@@ -172,8 +178,8 @@ export default function FreeformPlayer({ song, onExit }: { song: Song; onExit: (
 
       <header className="player-header glass">
         <div>
-          <h1 className="title">Freeform · {song.key}</h1>
-          <p className="meta">{song.title} — play anything; no chart, no score</p>
+          <h1 className="title">Freeform · {songKey}</h1>
+          <p className="meta">the gesturesynth.com instrument — play anything; no chart, no score</p>
         </div>
         <div className="voice-toggle" role="group" aria-label="Instrument mode">
           <button
