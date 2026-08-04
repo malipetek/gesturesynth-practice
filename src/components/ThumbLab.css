@@ -1,0 +1,138 @@
+/* Thumb Lab — data-collection workbench for the thumbs-up skip gesture. */
+
+.lab-panel {
+  position: fixed;
+  top: 84px;
+  left: 24px;
+  z-index: 10;
+  width: min(400px, calc(100vw - 48px));
+  padding: 20px 22px;
+  border-radius: 16px;
+  background: rgba(12, 18, 24, 0.72);
+  border: 1px solid rgba(232, 244, 248, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.lab-panel h1 {
+  margin: 0 0 4px;
+  font-size: 1.25rem;
+}
+
+.lab-status {
+  margin: 0 0 12px;
+  font-size: 0.82rem;
+  color: rgba(232, 244, 248, 0.62);
+}
+
+.lab-steps {
+  margin: 0 0 16px;
+  padding-left: 18px;
+  font-size: 0.84rem;
+  line-height: 1.55;
+  color: rgba(232, 244, 248, 0.8);
+}
+
+.lab-arm {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.lab-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(232, 244, 248, 0.16);
+  background: rgba(232, 244, 248, 0.06);
+  color: #e8f4f8;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.lab-btn:hover:not(:disabled) {
+  border-color: rgba(61, 255, 224, 0.5);
+}
+
+.lab-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.lab-btn kbd {
+  font-family: inherit;
+  font-size: 0.72rem;
+  padding: 2px 7px;
+  border-radius: 6px;
+  border: 1px solid rgba(232, 244, 248, 0.2);
+  color: rgba(232, 244, 248, 0.6);
+}
+
+.lab-btn-up.armed,
+.lab-btn-down.armed {
+  border-color: #f0c65a;
+  animation: lab-pulse 1.2s ease-in-out infinite;
+}
+
+.lab-btn-up.armed {
+  color: #3dffe0;
+  background: rgba(61, 255, 224, 0.1);
+}
+
+.lab-btn-down.armed {
+  color: #ff6b5a;
+  background: rgba(255, 107, 90, 0.1);
+}
+
+@keyframes lab-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(240, 198, 90, 0.35);
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(240, 198, 90, 0);
+  }
+}
+
+.lab-counts {
+  margin: 0 0 12px;
+  font-size: 0.84rem;
+  font-variant-numeric: tabular-nums;
+  color: rgba(232, 244, 248, 0.8);
+}
+
+.lab-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.lab-btn-save {
+  border-color: rgba(61, 255, 224, 0.45);
+  color: #3dffe0;
+}
+
+.lab-live {
+  position: fixed;
+  left: 24px;
+  bottom: 24px;
+  z-index: 10;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: rgba(12, 18, 24, 0.72);
+  border: 1px solid rgba(232, 244, 248, 0.12);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  color: rgba(232, 244, 248, 0.75);
+  white-space: pre;
+}

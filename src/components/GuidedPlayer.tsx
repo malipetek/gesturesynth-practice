@@ -270,8 +270,11 @@ export default function GuidedPlayer({
       // fingers raised, so playing can never look like a thumbs-up.
       const ph = phaseRef.current;
       if (ph === 'stepping' || ph === 'section-done') {
-        const rlm = frameBridge.current.landmarksRef?.current?.right ?? null;
-        const up = !!rlm && isThumbsUp(rlm);
+        // Either hand may flash the skip gesture.
+        const hands = frameBridge.current.landmarksRef?.current;
+        const up =
+          (!!hands?.right && isThumbsUp(hands.right)) ||
+          (!!hands?.left && isThumbsUp(hands.left));
         if (up) {
           if (thumbSinceRef.current === null) thumbSinceRef.current = performance.now();
           const heldMs = performance.now() - thumbSinceRef.current;
@@ -496,7 +499,7 @@ export default function GuidedPlayer({
                 Skip this chord →
               </button>
               <span className={`thumb-hint${thumbPct > 0 ? ' active' : ''}`}>
-                👍 hold to skip section
+                👍 hold to skip section (either hand)
                 <span className="thumb-meter" aria-hidden="true">
                   <i style={{ width: `${thumbPct}%` }} />
                 </span>

@@ -1,0 +1,11 @@
+---
+import Layout from '../layouts/Layout.astro';
+import ThumbLab from '../components/ThumbLab';
+---
+
+<Layout
+	title="Thumb Lab — Gesture Synth Practice"
+	description="Data-collection workbench for tuning the thumbs-up skip gesture on real hand geometry."
+>
+	<ThumbLab client:only="react" />
+</Layout>

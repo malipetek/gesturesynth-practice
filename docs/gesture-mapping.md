@@ -106,7 +106,7 @@ metronome sound/volume (`localStorage['gs-practice-settings']`).
 
 ## App-level gesture: 👍 skip (practice app only — not from the instrument)
 
-Guided practice uses a held **thumbs-up** (800 ms) on the right hand to skip
+Guided practice uses a held **thumbs-up** (800 ms) on either hand to skip
 to the next section. Detection (`isThumbsUp` in `src/lib/gesture.ts`) is
 **rotation-invariant by design**: thumb extended (tip→MCP distance > 0.35 ×
 wrist→middle-MCP span) + all four fingers curled (tip→wrist < 1.02 ×
