@@ -1,0 +1,105 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { getSongs } from '../lib/songs';
+
+const songs = [...getSongs()]
+	.sort((a, b) => (a.title < b.title ? -1 : 1))
+	.map((song) => ({
+		song,
+		chords: [
+			...new Map(song.events.map((e) => [e.chordName, e])).values(),
+		].map((e) => e.chordName),
+	}));
+---
+
+<Layout
+	title="Gesture Synth Chords: Every Hand Gesture Explained | Gesture Synth School"
+	description="The complete Gesture Synth chord gesture reference: scale degrees I–VII, major/minor tilt, chord qualities, and octave — plus which chords each song uses."
+	ogType="article"
+	jsonLd={[
+		{
+			'@context': 'https://schema.org',
+			'@type': 'Article',
+			headline: 'Gesture Synth Chords: Every Hand Gesture Explained',
+			description:
+				'The complete Gesture Synth chord gesture reference: scale degrees, major/minor, chord qualities, and octave.',
+			url: new URL('/chords/', Astro.site).href,
+			inLanguage: 'en',
+		},
+	]}
+>
+	<article class="content container">
+		<p class="eyebrow">Reference</p>
+		<h1>Gesture Synth Chords</h1>
+		<p class="lede">
+			Gesture Synth is a hand gesture synth: your webcam turns your hands into a chord
+			instrument. Every chord is two gestures at once — your left hand picks the scale degree
+			and key flavor, your right hand picks the chord quality and octave.
+		</p>
+
+		<h2>Left hand: scale degrees</h2>
+		<table class="gesture-table">
+			<thead>
+				<tr><th>Gesture</th><th>Degree</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>1 finger</td><td>I (tonic)</td></tr>
+				<tr><td>2 fingers</td><td>II</td></tr>
+				<tr><td>3 fingers</td><td>III</td></tr>
+				<tr><td>4 fingers</td><td>IV</td></tr>
+				<tr><td>5 fingers</td><td>V (dominant)</td></tr>
+				<tr><td>Index + pinky</td><td>VI</td></tr>
+				<tr><td>Index + pinky + thumb</td><td>VII</td></tr>
+			</tbody>
+		</table>
+
+		<h2>Left hand: major or minor</h2>
+		<p>
+			Tilting your left wrist flips between the major and minor world. Many songs live on the
+			IV&ndash;iv flip &mdash; a major IV that drops to a minor iv, like the end of
+			<a href="/song/creep/">Creep</a>.
+		</p>
+
+		<h2>Right hand: chord quality</h2>
+		<table class="gesture-table">
+			<thead>
+				<tr><th>Gesture</th><th>Major key</th><th>Minor key</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>1 finger</td><td>Major triad</td><td>Minor triad</td></tr>
+				<tr><td>2 fingers</td><td>Major 1st inv.</td><td>Minor 1st inv.</td></tr>
+				<tr><td>3 fingers</td><td>Major 7th</td><td>Minor 7th</td></tr>
+				<tr><td>4 fingers</td><td>Dominant 7th</td><td>Diminished 7th</td></tr>
+			</tbody>
+		</table>
+
+		<h2>Right thumb &amp; wrist: octave, volume, tone</h2>
+		<ul>
+			<li><strong>Thumb extended</strong> → down an octave.</li>
+			<li><strong>Wrist height</strong> → volume (0&ndash;100%).</li>
+			<li><strong>Wrist tilt</strong> → tone / filter sweep.</li>
+		</ul>
+
+		<h2>Chords used by songbook songs</h2>
+		<p class="muted">
+			Each song page lists its full chord chart with the exact hand shape for every chord.
+		</p>
+		<ul class="chord-list">
+			{songs.map(({ song, chords }) => (
+				<li>
+					<strong>{song.title}</strong>
+					<span class="muted">{chords.join(' · ')}</span>
+				</li>
+			))}
+		</ul>
+
+		<div class="card cta">
+			<h3>Learn the full chart</h3>
+			<p class="muted">
+				See each gesture in action and practice it with the play-along player.
+			</p>
+			<a class="btn" href="/guide/">How to play</a>
+			<a class="btn" href="/">Browse the songbook</a>
+		</div>
+	</article>
+</Layout>

@@ -1,25 +1,44 @@
 ---
-import Layout from '../layouts/Layout.astro';
-import CustomSongList from '../components/CustomSongList';
-import { getSongs } from '../lib/songs';
-import type { Song } from '../lib/types';
+import Layout from "../layouts/Layout.astro";
+import CustomSongList from "../components/CustomSongList";
+import { getSongs } from "../lib/songs";
+import type { Song } from "../lib/types";
 
 // Editorial order first (hit pieces up top), then everything else by title.
 const songList = [...getSongs()].sort(
-	(a, b) => (a.order ?? 1000) - (b.order ?? 1000) || a.title.localeCompare(b.title),
+	(a, b) =>
+		(a.order ?? 1000) - (b.order ?? 1000) || a.title.localeCompare(b.title),
 );
 
-const barCount = (song: Song) => song.events.reduce((max, e) => Math.max(max, e.bar), 0);
+const barCount = (song: Song) =>
+	song.events.reduce((max, e) => Math.max(max, e.bar), 0);
 ---
 
 <Layout
-	title="Gesture Synth Practice"
-	description="Learn to play songs on Gesture Synth, one chord gesture at a time."
+	title="Learn Gesture Synth: Play Songs with Hand Gestures | Gesture Synth School"
+	description="Free guided practice for Gesture Synth. Chord charts, gesture tutorials, and a play-along player for popular songs — learn the hand gestures step by step."
+	jsonLd={[
+		{
+			"@context": "https://schema.org",
+			"@type": "SoftwareApplication",
+			name: "Gesture Synth School",
+			applicationCategory: "EducationalApplication",
+			operatingSystem: "Web",
+			description:
+				"Guided practice player for Gesture Synth with chord charts, gesture tutorials, and a webcam hand-tracking songbook.",
+			offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+			url: Astro.site.href,
+		},
+	]}
 >
 	<section class="hero container">
 		<p class="eyebrow">Gesture Synth</p>
 		<h1>Practice</h1>
 		<p>Learn to play songs on Gesture Synth, one chord gesture at a time.</p>
+		<div class="hero-links">
+			<a class="btn" href="/guide/">How to play</a>
+			<a class="btn" href="/chords/">Chord gestures</a>
+		</div>
 	</section>
 
 	<section class="steps container">
@@ -29,23 +48,24 @@ const barCount = (song: Song) => song.events.reduce((max, e) => Math.max(max, e.
 				<span class="step-num">Left hand</span>
 				<h3>Pick a scale degree</h3>
 				<p class="muted">
-					Raise 1–5 fingers for degrees I–V; index + pinky for VI, add the thumb for VII. Tilt
-					your wrist to flip between major and minor.
+					Raise 1–5 fingers for degrees I–V; index + pinky for VI, add the thumb
+					for VII. Tilt your wrist to flip between major and minor.
 				</p>
 			</div>
 			<div class="card step">
 				<span class="step-num">Right hand</span>
 				<h3>Shape the chord</h3>
 				<p class="muted">
-					1–4 fingers choose the chord quality, and your thumb shifts the octave up or down.
+					1–4 fingers choose the chord quality, and your thumb shifts the octave
+					up or down.
 				</p>
 			</div>
 			<div class="card step">
 				<span class="step-num">Match both</span>
 				<h3>Follow the chart</h3>
 				<p class="muted">
-					Line both hands up to the target shape for each chord in the chart and the song rings
-					out.
+					Line both hands up to the target shape for each chord in the chart and
+					the song rings out.
 				</p>
 			</div>
 		</div>
@@ -53,21 +73,25 @@ const barCount = (song: Song) => song.events.reduce((max, e) => Math.max(max, e.
 
 	<section class="tools container">
 		<div class="grid grid-2">
-			<a class="card song-card tool-card" href="/freeform">
-				<p class="song-title">Freeform instrument</p>
-				<p class="song-artist">The gesturesynth.com instrument — play anything</p>
-				<div class="song-meta">
-					<span class="tag"><span class="dot">&#9679;</span> any key</span>
-					<span class="tag">gesture + theremin</span>
-				</div>
+			<a class="action-tile" href="/freeform">
+				<span class="action-glyph" aria-hidden="true">&#119070;</span>
+				<span class="action-body">
+					<span class="action-title">Freeform instrument</span>
+					<span class="action-sub"
+						>The gesturesynth.com instrument — play anything, any key</span
+					>
+				</span>
+				<span class="action-arrow" aria-hidden="true">&rarr;</span>
 			</a>
-			<a class="card song-card tool-card" href="/import">
-				<p class="song-title">Add your own song</p>
-				<p class="song-artist">Have the chords? Practice them here</p>
-				<div class="song-meta">
-					<span class="tag">ChordPro paste</span>
-					<span class="tag">saved in this browser</span>
-				</div>
+			<a class="action-tile" href="/import">
+				<span class="action-glyph" aria-hidden="true">&#43;</span>
+				<span class="action-body">
+					<span class="action-title">Add your own song</span>
+					<span class="action-sub"
+						>Paste ChordPro chords — saved in this browser</span
+					>
+				</span>
+				<span class="action-arrow" aria-hidden="true">&rarr;</span>
 			</a>
 		</div>
 	</section>
@@ -77,28 +101,36 @@ const barCount = (song: Song) => song.events.reduce((max, e) => Math.max(max, e.
 	<section class="songbook container">
 		<div class="songbook-head">
 			<h2>Songbook</h2>
-			<span class="song-count">{songList.length} {songList.length === 1 ? 'song' : 'songs'}</span>
+			<span class="song-count"
+				>{songList.length} {songList.length === 1 ? "song" : "songs"}</span
+			>
 		</div>
-		{songList.length === 0 ? (
-			<div class="empty">
-				<span class="glyph">&#9834;</span>
-				<h3>No songs yet</h3>
-				<p>Songs will appear here once the songbook is ready. Check back soon.</p>
-			</div>
-		) : (
-			<div class="grid">
-				{songList.map((song) => (
-					<a class="card song-card" href={`/song/${song.slug}`}>
-						<p class="song-title">{song.title}</p>
-						<p class="song-artist">{song.artist}</p>
-						<div class="song-meta">
-							<span class="tag"><span class="dot">&#9679;</span> {song.key}</span>
-							<span class="tag">{song.bpm} BPM</span>
-							<span class="tag">{barCount(song)} bars · {song.events.length} chords</span>
-						</div>
-					</a>
-				))}
-			</div>
-		)}
+		{
+			songList.length === 0 ? (
+				<div class="empty">
+					<span class="glyph">&#9834;</span>
+					<h3>No songs yet</h3>
+					<p>
+						Songs will appear here once the songbook is ready. Check back soon.
+					</p>
+				</div>
+			) : (
+				<div class="grid grid-auto">
+					{songList.map((song) => (
+						<a class="card song-card" href={`/song/${song.slug}`}>
+							<div class="song-card-head">
+								<p class="song-title">{song.title}</p>
+								<span class="key-chip">{song.key}</span>
+							</div>
+							<p class="song-artist">{song.artist}</p>
+							<p class="song-meta-line">
+								{song.bpm} BPM · {barCount(song)} bars · {song.events.length}{" "}
+								chords
+							</p>
+						</a>
+					))}
+				</div>
+			)
+		}
 	</section>
 </Layout>

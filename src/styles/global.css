@@ -122,6 +122,10 @@ main {
   color: var(--muted);
 }
 
+.feedback-btn {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.9rem;
+}
 .card {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent), var(--card);
   border: 1px solid var(--border);
@@ -150,27 +154,84 @@ a.card:hover {
   grid-template-columns: repeat(2, 1fr);
 }
 
+/* Songbook listing: fill the row with as many cards as fit. */
+.grid-auto {
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+}
 @media (max-width: 760px) {
   .grid-3,
-  .grid-2 {
+  .grid-2,
+    .grid-auto {
     grid-template-columns: 1fr;
   }
 }
 
-/* Homepage tool cards (Freeform / Add your own song) — gold accents to
-   distinguish them from songbook entries. */
+/* Homepage action tiles (Freeform / Add your own song): prominent CTAs,
+   visually distinct from the content cards around them. */
 
 .tools {
-  margin-bottom: 2.5rem;
-}
-
-.tool-card {
-  border-color: rgba(240, 198, 90, 0.35);
-  background: linear-gradient(180deg, rgba(240, 198, 90, 0.06), transparent 60%);
-}
-
-.tool-card:hover {
-  border-color: var(--gold);
+  margin-top: 4rem;
+  }
+    .action-tile {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1.25rem 1.4rem;
+      border-radius: var(--radius);
+      border: 1px solid rgba(61, 255, 224, 0.35);
+      background: linear-gradient(180deg, rgba(61, 255, 224, 0.09), rgba(61, 255, 224, 0.02));
+      color: var(--text);
+      transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+    }
+  
+    .action-tile:hover {
+      text-decoration: none;
+      border-color: var(--mint);
+      box-shadow: var(--glow-mint);
+      transform: translateY(-2px);
+    }
+  
+    .action-glyph {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: 2.5rem;
+      height: 2.5rem;
+      border-radius: 10px;
+      border: 1px solid rgba(61, 255, 224, 0.35);
+      background: rgba(61, 255, 224, 0.1);
+      color: var(--mint);
+      font-size: 1.3rem;
+      line-height: 1;
+    }
+                .action-body {
+                  display: flex;
+                  flex-direction: column;
+                  gap: 0.15rem;
+                  min-width: 0;
+                }
+        
+                .action-title {
+                  font-family: var(--font-display);
+                  font-weight: 700;
+                  font-size: 1.05rem;
+                  letter-spacing: -0.01em;
+                }
+        
+                .action-sub {
+                  color: var(--muted);
+                  font-size: 0.88rem;
+                }
+        
+                .action-arrow {
+                  margin-left: auto;
+                  color: var(--mint);
+                  font-size: 1.25rem;
+                  transition: transform 0.2s var(--ease-out);
+                }
+        
+                .action-tile:hover .action-arrow {
+                  transform: translateX(4px);
 }
 
 /* Custom (user-imported) song cards: the whole card is a link, with a
@@ -182,8 +243,11 @@ a.card:hover {
 }
 
 .custom-card .custom-link {
-  display: block;
-  padding: inherit;
+  display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    height: 100%;
+    padding: 1.4rem;
   color: inherit;
   text-decoration: none;
 }
@@ -387,8 +451,15 @@ a.card:hover {
   margin-bottom: 0;
 }
 
+.hero-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 1.4rem;
+}
 .steps {
-  margin-top: 2.5rem;
+  margin-top: 4rem;
 }
 
 .steps h2 {
@@ -423,7 +494,7 @@ a.card:hover {
 }
 
 .songbook {
-  margin-top: 3.5rem;
+  margin-top: 4.5rem;
 }
 
 .songbook-head {
@@ -447,7 +518,33 @@ a.card:hover {
 .song-card {
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
+  gap: 0.4rem;
+  }
+  
+  a.song-card:hover,
+  .custom-card:hover {
+    border-color: rgba(61, 255, 224, 0.45);
+    box-shadow: var(--glow-mint);
+    transform: translateY(-2px);
+  }
+  
+  .song-card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.75rem;
+  }
+  
+  .key-chip {
+    flex: none;
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    color: var(--mint);
+    border: 1px solid rgba(61, 255, 224, 0.35);
+    background: rgba(61, 255, 224, 0.08);
+    padding: 0.12rem 0.6rem;
+    border-radius: 999px;
+    white-space: nowrap;
 }
 
 .song-card .song-title {
@@ -461,12 +558,12 @@ a.card:hover {
   margin: 0;
 }
 
-.song-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: auto;
-  padding-top: 0.6rem;
+.song-meta-line {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--muted);
+  margin: auto 0 0;
+  padding-top: 0.75rem;
 }
 
 .song-header {
@@ -526,6 +623,138 @@ a.card:hover {
   color: var(--mint);
 }
 
+/* Content pages (guide, chords) */
+
+.content {
+  padding-block: clamp(1.5rem, 5vh, 3rem) 1rem;
+  max-width: 46rem;
+}
+
+.content h1 {
+  font-size: clamp(1.9rem, 4.5vw, 2.8rem);
+  margin-bottom: 0.3rem;
+}
+
+.content .lede {
+  font-size: 1.1rem;
+  color: var(--muted);
+  margin: 0 0 2rem;
+}
+
+.content h2 {
+  font-size: 1.35rem;
+  margin-top: 2.4rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 0.4rem;
+}
+
+.content h3 {
+  font-size: 1.05rem;
+  margin-top: 1.4rem;
+}
+
+.content p,
+.content li {
+  color: var(--text);
+}
+
+.content ul,
+.content ol {
+  padding-left: 1.2rem;
+}
+
+.content li+li {
+  margin-top: 0.35rem;
+}
+
+.content code {
+  background: rgba(232, 244, 248, 0.08);
+  border-radius: 5px;
+  padding: 0.1rem 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+}
+
+.content .card {
+  margin-top: 1.4rem;
+}
+
+.content .cta {
+  margin-top: 2.5rem;
+}
+
+.gesture-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.95rem;
+}
+
+.gesture-table th,
+.gesture-table td {
+  text-align: left;
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.gesture-table th {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--mint);
+}
+
+.faq details {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.9rem 1.1rem;
+  margin-top: 0.8rem;
+  background: var(--card);
+}
+
+.faq summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.faq details p {
+  margin-bottom: 0;
+}
+
+.chord-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.chord-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.6rem 0.9rem;
+  background: var(--card);
+}
+
+.chord-list strong {
+  font-family: var(--font-mono);
+  min-width: 3.5rem;
+}
+
+.song-chords {
+  margin-top: 2.5rem;
+  position: relative;
+  z-index: 2;
+}
+
+.footer-links {
+  display: flex;
+  gap: 1rem;
+}
 /* Song practice page: the camera feed is a full-page fixed layer inside the
    Player, so page chrome needs to sit above it. The stage must stay below the
    song header — on a z-index tie the later element (.song-stage, and thus the

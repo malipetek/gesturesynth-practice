@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Player from '../../components/Player';
 import { getSongs } from '../../lib/songs';
+import { QUALITY_LABELS, DEGREE_LABELS, type GestureTarget } from '../../lib/types';
 
 export function getStaticPaths() {
 	return getSongs().map((song) => ({ params: { slug: song.slug } }));
@@ -12,21 +13,63 @@ const song = getSongs().find((s) => s.slug === Astro.params.slug);
 if (!song) {
 	return Astro.redirect('/');
 }
+
+const uniqueChords = [...new Map(song.events.map((e) => [e.chordName, e])).values()];
+
+const gestureText = (t: GestureTarget) =>
+	`degree ${DEGREE_LABELS[t.degree]} (${t.world} key), quality ${QUALITY_LABELS[t.world][t.quality as 1 | 2 | 3 | 4]}`;
+
+const canonical = new URL(`/song/${song.slug}/`, Astro.site).href;
 ---
 
 <Layout
-	title={`${song.title} — ${song.artist} | Gesture Synth Practice`}
-	description={`Practice ${song.title} by ${song.artist} on Gesture Synth.`}
+	title={`${song.title} — Gesture Synth Chords & Hand Gestures | Gesture Synth School`}
+	description={`Learn to play "${song.title}" by ${song.artist} on Gesture Synth. See the full chord chart and the hand gestures for every chord — degree, major/minor, and quality — and play along.`}
+	canonical={canonical}
+	ogType="article"
+	jsonLd={[
+		{
+			'@context': 'https://schema.org',
+			'@type': 'MusicPlaylist',
+			name: `${song.title} — Gesture Synth chord chart`,
+			numTracks: uniqueChords.length,
+			track: uniqueChords.map((e) => ({
+				'@type': 'MusicRecording',
+				name: `${e.chordName} (${DEGREE_LABELS[e.target.degree]} ${e.target.world})`,
+			})),
+			url: canonical,
+			inLanguage: 'en',
+		},
+	]}
 >
 	<section class="song-header container">
 		<a class="back muted" href="/">&#8592; Songbook</a>
-		<!-- Title/artist/key/BPM live in the Player's own header; keep an h1 for semantics. -->
-		<h1 class="visually-hidden">
-			{song.title} — {song.artist}
-		</h1>
+		<h1>{song.title}</h1>
+		<p class="song-artist-lg">{song.artist}</p>
+		<div class="song-chips">
+			<span class="tag"><span class="dot">&#9679;</span> {song.key}</span>
+			<span class="tag">{song.bpm} BPM</span>
+			<span class="tag">{song.timeSignature.join('/')}</span>
+		</div>
 	</section>
 
 	<section class="song-stage container">
 		<Player song={song} client:only="react" />
+	</section>
+
+	<section class="song-chords container">
+		<h2>Chords in "{song.title}"</h2>
+		<p class="muted">
+			Every chord in the chart as a Gesture Synth shape: left hand picks the scale degree and
+			major/minor, right hand picks the chord quality.
+		</p>
+		<ul class="chord-list">
+			{uniqueChords.map((e) => (
+				<li>
+					<strong>{e.chordName}</strong>
+					<span class="muted">{gestureText(e.target)}</span>
+				</li>
+			))}
+		</ul>
 	</section>
 </Layout>

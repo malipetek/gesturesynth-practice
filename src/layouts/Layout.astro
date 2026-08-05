@@ -4,9 +4,43 @@ import "../styles/global.css";
 interface Props {
 	title: string;
 	description?: string;
+	/** Override the canonical URL. Defaults to this page's URL on the production site. */
+	canonical?: string;
+	/** Open Graph type, e.g. "website" (default) or "article". */
+	ogType?: string;
+	ogImage?: string;
+	/** Extra JSON-LD objects to inject, merged with the site-wide WebSite schema. */
+	jsonLd?: object[];
+	/** Render <meta name="robots" content="noindex"> (unused pages / drafts). */
+	noindex?: boolean;
 }
 
-const { title, description } = Astro.props;
+const {
+	title,
+	description = "Learn to play songs on Gesture Synth, one chord gesture at a time.",
+	canonical,
+	ogType = "website",
+	ogImage = "/og-image.png",
+	jsonLd = [],
+	noindex = false,
+} = Astro.props;
+
+const canonicalUrl = canonical ?? new URL(Astro.url.pathname, Astro.site).href;
+const ogImageUrl = new URL(ogImage, Astro.site).href;
+
+const schema = [
+	{
+		"@context": "https://schema.org",
+		"@type": "WebSite",
+		name: "Gesture Synth School",
+		alternateName: "Gesture Synth Practice",
+		url: Astro.site.href,
+		description:
+			"Learn to play songs on Gesture Synth with guided practice charts.",
+		inLanguage: "en",
+	},
+	...jsonLd,
+];
 ---
 
 <!doctype html>
@@ -14,11 +48,9 @@ const { title, description } = Astro.props;
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta
-			name="description"
-			content={description ??
-				"Learn to play songs on Gesture Synth, one chord gesture at a time."}
-		/>
+		<meta name="description" content={description} />
+		<meta name="robots" content={noindex ? "noindex" : "index, follow"} />
+		<link rel="canonical" href={canonicalUrl} />
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -27,24 +59,26 @@ const { title, description } = Astro.props;
 			href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Syne:wght@600;700;800&display=swap"
 			rel="stylesheet"
 		/>
-		<title>{title}</title>
-		<!-- Google tag (gtag.js) -->
-		<script async src="https://www.googletagmanager.com/gtag/js?id=G-TM1GWWXSCM"
-		></script>
-		<script>
-			window.dataLayer = window.dataLayer || [];
-			function gtag() {
-				dataLayer.push(arguments);
-			}
-			gtag("js", new Date());
 
-			gtag("config", "G-TM1GWWXSCM");
-		</script>
+		<title>{title}</title>
+
+		<meta property="og:type" content={ogType} />
+		<meta property="og:site_name" content="Gesture Synth School" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={canonicalUrl} />
+		<meta property="og:image" content={ogImageUrl} />
+		<meta name="twitter:card" content="summary_large_image" />
+		<meta name="twitter:title" content={title} />
+		<meta name="twitter:description" content={description} />
+		<meta name="twitter:image" content={ogImageUrl} />
+
+		<script type="application/ld+json" set:html={JSON.stringify(schema)} />
 	</head>
 	<body>
 		<header class="site-header">
 			<div class="container">
-				<a class="brand" href="/">Gesture Synth Practice</a>
+				<a class="brand" href="/">Gesture Synth School</a>
 			</div>
 		</header>
 		<main>
@@ -55,6 +89,16 @@ const { title, description } = Astro.props;
 				<p class="muted">
 					Practice every chord gesture until it feels like second nature.
 				</p>
+				<nav class="footer-links">
+					<a class="muted" href="/guide/">How to play</a>
+					<a class="muted" href="/chords/">Chord gestures</a>
+					<a class="muted" href="/weld/">Gesture Synth Weld</a>
+					<a class="muted" href="/">Songbook</a>
+				</nav>
+				<a
+					class="btn feedback-btn"
+					href="mailto:feedback@gesturesynthschool.com">Send feedback</a
+				>
 				<a class="muted" href="https://www.gesturesynth.com"
 					>Powered by Gesture Synth</a
 				>

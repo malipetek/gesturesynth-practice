@@ -25,21 +25,18 @@ export default function CustomSongList() {
           {songs.length} {songs.length === 1 ? 'song' : 'songs'}
         </span>
       </div>
-      <div className="grid">
+      <div className="grid grid-auto">
         {songs.map((song) => (
           <div className="card song-card custom-card" key={song.slug}>
             <a className="custom-link" href={`/song/custom?slug=${encodeURIComponent(song.slug)}`}>
-              <p className="song-title">{song.title}</p>
-              <p className="song-artist">{song.artist}</p>
-              <div className="song-meta">
-                <span className="tag">
-                  <span className="dot">&#9679;</span> {song.key}
-                </span>
-                <span className="tag">{song.bpm} BPM</span>
-                <span className="tag">
-                  {barCount(song)} bars · {song.events.length} chords
-                </span>
+              <div className="song-card-head">
+                <p className="song-title">{song.title}</p>
+                <span className="key-chip">{song.key}</span>
               </div>
+              <p className="song-artist">{song.artist}</p>
+              <p className="song-meta-line">
+                {song.bpm} BPM · {barCount(song)} bars · {song.events.length} chords
+              </p>
             </a>
             <button
               type="button"

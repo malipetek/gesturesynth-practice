@@ -1,0 +1,132 @@
+---
+import Layout from '../layouts/Layout.astro';
+
+const faq = [
+	{
+		q: 'What is Gesture Synth Weld?',
+		a: 'Gesture Synth Weld is a browser-based gesture synthesizer hosted on Vercel — a popular web version of Gesture Synth. It tracks your hands through the webcam and turns finger counts, wrist tilts, and hand position into chords and theremin-style tones. No downloads or hardware required.',
+	},
+	{
+		q: 'Is Gesture Synth Weld free?',
+		a: 'Yes. Gesture Synth Weld runs entirely in the browser for free. Open the Vercel app, allow camera access, and start playing.',
+	},
+	{
+		q: 'What is the difference between Gesture Synth and Gesture Synth Weld?',
+		a: 'They share the same core idea and gesture mapping. Gesture Synth is the original app; Gesture Synth Weld is a widely-shared web (Vercel) version with the same hand-tracking chords and theremin tones, plus selectable synth voices like Warm, Bright, and Retro.',
+	},
+	{
+		q: 'How do I play chords on Gesture Synth Weld?',
+		a: 'Raise fingers on your left hand to pick a scale degree (I–V, plus VI and VII combos) and tilt your wrist to flip between major and minor. Your right hand chooses the chord quality with 1–4 fingers, your thumb shifts the octave, and your wrist height controls volume.',
+	},
+	{
+		q: 'Can I practice songs on Gesture Synth Weld?',
+		a: 'Yes. Use the songbook here to practice any chart — it shows the exact hand shape for every chord and plays a backing pad and metronome so you stay on beat.',
+	},
+];
+---
+
+<Layout
+	title="Gesture Synth Weld: How to Play the Webcam Hand Synth | Gesture Synth School"
+	description="What is Gesture Synth Weld? The popular Vercel web version of the webcam hand synth. Learn the hand gestures, synth voices, and practice songs with full chord charts."
+	ogType="article"
+	jsonLd={[
+		{
+			'@context': 'https://schema.org',
+			'@type': 'Article',
+			headline: 'Gesture Synth Weld: How to Play the Webcam Hand Synth',
+			description:
+				'A guide to Gesture Synth Weld, the popular Vercel-hosted webcam gesture synthesizer: hand gestures, synth voices, and practice charts.',
+			url: new URL('/weld/', Astro.site).href,
+			inLanguage: 'en',
+		},
+		{
+			'@context': 'https://schema.org',
+			'@type': 'FAQPage',
+			mainEntity: faq.map((f) => ({
+				'@type': 'Question',
+				name: f.q,
+				acceptedAnswer: { '@type': 'Answer', text: f.a },
+			})),
+		},
+	]}
+>
+	<article class="content container">
+		<p class="eyebrow">Guide</p>
+		<h1>Gesture Synth Weld</h1>
+		<p class="lede">
+			Gesture Synth Weld is the popular <a href="https://vercel.com">Vercel</a>-hosted web
+			version of Gesture Synth: a browser instrument that plays chords and theremin tones from
+			your hands, tracked through the webcam. This is how it works and how to play it.
+		</p>
+
+		<h2>What is Gesture Synth Weld?</h2>
+		<p>
+			Gesture Synth Weld is a web app that turns your webcam into a musical instrument. It
+			follows your hands with hand tracking and maps finger counts, wrist tilts, and hand
+			position to chords, chord quality, and theremin-style tones — all in the browser, with no
+			downloads or accounts.
+		</p>
+		<p>
+			You can open it directly at
+			<a href="https://gesture-synth-weld.vercel.app">gesture-synth-weld.vercel.app</a>, or use
+			the original instrument at <a href="https://www.gesturesynth.com">gesturesynth.com</a>.
+		</p>
+
+		<h2>The hand gestures</h2>
+		<table class="gesture-table">
+			<thead>
+				<tr><th>Hand</th><th>Gesture</th><th>What it does</th></tr>
+			</thead>
+			<tbody>
+				<tr><td>Left</td><td>1–5 fingers raised</td><td>Scale degrees I–V</td></tr>
+				<tr><td>Left</td><td>Index + pinky</td><td>Degree VI</td></tr>
+				<tr><td>Left</td><td>Index + pinky + thumb</td><td>Degree VII</td></tr>
+				<tr><td>Left</td><td>Wrist tilt</td><td>Major ↔ minor</td></tr>
+				<tr><td>Right</td><td>1–4 fingers raised</td><td>Chord quality (triad → seventh)</td></tr>
+				<tr><td>Right</td><td>Thumb extended</td><td>Down an octave</td></tr>
+				<tr><td>Right</td><td>Wrist height</td><td>Volume</td></tr>
+				<tr><td>Right</td><td>Wrist lean</td><td>Tone / filter</td></tr>
+			</tbody>
+		</table>
+		<p>
+			The full breakdown of every gesture is in the
+			<a href="/guide/">how to play guide</a> and the
+			<a href="/chords/">chord gesture reference</a>.
+		</p>
+
+		<h2>Synth voices</h2>
+		<ul>
+			<li><strong>Warm Synth</strong> — soft, rounded pad tones.</li>
+			<li><strong>Bright Synth</strong> — crisp, present leads.</li>
+			<li><strong>Retro Synth</strong> — classic analog-style character.</li>
+		</ul>
+		<p>
+			A <strong>filter</strong> control follows your right-wrist lean, sweeping the tone from
+			dark and muted to bright and cutting.
+		</p>
+
+		<h2>Practice songs on Gesture Synth Weld</h2>
+		<p>
+			The same gesture mapping powers the songbook here. Pick a song, follow the chord chart
+			with both hands, and the backing pad plus metronome keep you on beat.
+		</p>
+		<div class="card cta">
+			<h3>Start practicing</h3>
+			<p class="muted">
+				Begin with the beginner songs, then move to the trending charts people are playing.
+			</p>
+			<a class="btn" href="/">Browse the songbook</a>
+			<a class="btn" href="/guide/">Learn the gestures</a>
+		</div>
+
+		<h2>FAQ</h2>
+		<div class="faq">
+			{faq.map((f) => (
+				<details>
+					<summary>{f.q}</summary>
+					<p class="muted">{f.a}</p>
+				</details>
+			))}
+		</div>
+	</article>
+</Layout>

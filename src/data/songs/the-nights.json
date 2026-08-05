@@ -1,0 +1,718 @@
+{
+  "slug": "the-nights",
+  "title": "The Nights",
+  "artist": "Avicii",
+  "key": "C#m",
+  "bpm": 126,
+  "timeSignature": [
+    4,
+    4
+  ],
+  "order": 12,
+  "events": [
+    {
+      "bar": 1,
+      "beat": 1,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 1,
+      "beat": 2,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 1,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 1,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 1,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 2,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 1,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 2,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 1,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 2,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 6,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 2,
+      "chordName": "E",
+      "target": {
+        "degree": 3,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 6,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 2,
+      "chordName": "E",
+      "target": {
+        "degree": 3,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 6,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 2,
+      "chordName": "E",
+      "target": {
+        "degree": 3,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 6,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 2,
+      "chordName": "E",
+      "target": {
+        "degree": 3,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 9,
+      "beat": 1,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 9,
+      "beat": 2,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 9,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 9,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 10,
+      "beat": 1,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 10,
+      "beat": 2,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 10,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 10,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 11,
+      "beat": 1,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 11,
+      "beat": 2,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 11,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 11,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 12,
+      "beat": 1,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 12,
+      "beat": 2,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 12,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 12,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 13,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 6,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 13,
+      "beat": 2,
+      "chordName": "E",
+      "target": {
+        "degree": 3,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 13,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 13,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 14,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 6,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 14,
+      "beat": 2,
+      "chordName": "E",
+      "target": {
+        "degree": 3,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 14,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 14,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 15,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 6,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 15,
+      "beat": 2,
+      "chordName": "E",
+      "target": {
+        "degree": 3,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 15,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 15,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 16,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 6,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 16,
+      "beat": 2,
+      "chordName": "E",
+      "target": {
+        "degree": 3,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 16,
+      "beat": 3,
+      "chordName": "B",
+      "target": {
+        "degree": 7,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 16,
+      "beat": 4,
+      "chordName": "C#m",
+      "target": {
+        "degree": 1,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    }
+  ]
+}

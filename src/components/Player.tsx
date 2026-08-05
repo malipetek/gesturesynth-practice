@@ -14,7 +14,7 @@ import { loadSettings, saveSettings, type PracticeSettings } from '../lib/settin
 import { Tracker, type TrackerBridge } from './Tracker';
 import GuidedPlayer from './GuidedPlayer';
 import { DEGREE_FINGERS, HandShape, qualityFingers } from './HandShape';
-import type { MatchReport, Song, SongEvent } from '../lib/types';
+import type { GestureTarget, MatchReport, Song, SongEvent } from '../lib/types';
 import { DEGREE_LABELS } from '../lib/types';
 import './Player.css';
 

@@ -25,6 +25,7 @@
     "tone": "^15.1.22"
   },
   "devDependencies": {
+    "@astrojs/sitemap": "^3.7.3",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "puppeteer-core": "^25.4.0",

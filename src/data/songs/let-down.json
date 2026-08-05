@@ -1,0 +1,718 @@
+{
+  "slug": "let-down",
+  "title": "Let Down",
+  "artist": "Radiohead",
+  "key": "A",
+  "bpm": 84,
+  "timeSignature": [
+    4,
+    4
+  ],
+  "order": 11,
+  "events": [
+    {
+      "bar": 1,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 1,
+      "beat": 2,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 1,
+      "beat": 3,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 1,
+      "beat": 4,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 1,
+      "chordName": "F#m",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 2,
+      "chordName": "F#m",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 3,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 2,
+      "beat": 4,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 2,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 3,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 3,
+      "beat": 4,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 1,
+      "chordName": "F#m",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 2,
+      "chordName": "F#m",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 3,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 4,
+      "beat": 4,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 1,
+      "chordName": "D",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 2,
+      "chordName": "Dsus2",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 3,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 5,
+      "beat": 4,
+      "chordName": "D/F#",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 2,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 1,
+      "chordName": "D",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 2,
+      "chordName": "Dsus2",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 3,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 6,
+      "beat": 4,
+      "chordName": "D/F#",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 2,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 1,
+      "chordName": "D",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 2,
+      "chordName": "Dsus2",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 3,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 7,
+      "beat": 4,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 1,
+      "chordName": "D",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 2,
+      "chordName": "Dsus2",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 3,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 8,
+      "beat": 4,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 9,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 9,
+      "beat": 2,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 9,
+      "beat": 3,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 9,
+      "beat": 4,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 10,
+      "beat": 1,
+      "chordName": "F#m",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 10,
+      "beat": 2,
+      "chordName": "F#m",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 10,
+      "beat": 3,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 10,
+      "beat": 4,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 11,
+      "beat": 1,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 11,
+      "beat": 2,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 11,
+      "beat": 3,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 11,
+      "beat": 4,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 12,
+      "beat": 1,
+      "chordName": "F#m",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 12,
+      "beat": 2,
+      "chordName": "F#m",
+      "target": {
+        "degree": 6,
+        "world": "minor",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 12,
+      "beat": 3,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 12,
+      "beat": 4,
+      "chordName": "E",
+      "target": {
+        "degree": 5,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 13,
+      "beat": 1,
+      "chordName": "D",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 13,
+      "beat": 2,
+      "chordName": "Dsus2",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 13,
+      "beat": 3,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 13,
+      "beat": 4,
+      "chordName": "D/F#",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 2,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 14,
+      "beat": 1,
+      "chordName": "D",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 14,
+      "beat": 2,
+      "chordName": "Dsus2",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 14,
+      "beat": 3,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 14,
+      "beat": 4,
+      "chordName": "D/F#",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 2,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 15,
+      "beat": 1,
+      "chordName": "D",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 15,
+      "beat": 2,
+      "chordName": "Dsus2",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 15,
+      "beat": 3,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 15,
+      "beat": 4,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 16,
+      "beat": 1,
+      "chordName": "D",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 16,
+      "beat": 2,
+      "chordName": "Dsus2",
+      "target": {
+        "degree": 4,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 16,
+      "beat": 3,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    },
+    {
+      "bar": 16,
+      "beat": 4,
+      "chordName": "A",
+      "target": {
+        "degree": 1,
+        "world": "major",
+        "quality": 1,
+        "octave": 0
+      }
+    }
+  ]
+}
