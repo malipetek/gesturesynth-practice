@@ -1,9 +1,9 @@
 ---
-import '../styles/global.css';
+import "../styles/global.css";
 
 interface Props {
-  title: string;
-  description?: string;
+	title: string;
+	description?: string;
 }
 
 const { title, description } = Astro.props;
@@ -14,7 +14,11 @@ const { title, description } = Astro.props;
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<meta name="description" content={description ?? 'Learn to play songs on Gesture Synth, one chord gesture at a time.'} />
+		<meta
+			name="description"
+			content={description ??
+				"Learn to play songs on Gesture Synth, one chord gesture at a time."}
+		/>
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<link rel="icon" href="/favicon.ico" />
 		<link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -24,6 +28,18 @@ const { title, description } = Astro.props;
 			rel="stylesheet"
 		/>
 		<title>{title}</title>
+		<!-- Google tag (gtag.js) -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=G-TM1GWWXSCM"
+		></script>
+		<script>
+			window.dataLayer = window.dataLayer || [];
+			function gtag() {
+				dataLayer.push(arguments);
+			}
+			gtag("js", new Date());
+
+			gtag("config", "G-TM1GWWXSCM");
+		</script>
 	</head>
 	<body>
 		<header class="site-header">
@@ -36,8 +52,12 @@ const { title, description } = Astro.props;
 		</main>
 		<footer class="site-footer">
 			<div class="container">
-				<p class="muted">Practice every chord gesture until it feels like second nature.</p>
-				<a class="muted" href="https://www.gesturesynth.com">Powered by Gesture Synth</a>
+				<p class="muted">
+					Practice every chord gesture until it feels like second nature.
+				</p>
+				<a class="muted" href="https://www.gesturesynth.com"
+					>Powered by Gesture Synth</a
+				>
 			</div>
 		</footer>
 	</body>
