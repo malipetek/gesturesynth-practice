@@ -5,7 +5,7 @@ import { DEGREE_LABELS } from '../lib/types';
 import type { TrackingStatus } from '../lib/useHandTracking';
 import { compareFrame, qualityLabel, targetNotes } from '../lib/match';
 import { audioContextFromTone, GSVoice } from '../lib/gsVoice';
-import { isThumbsUp, wristTilt } from '../lib/gesture';
+import { isThumbsUp, thumbsUpDebug, wristTilt } from '../lib/gesture';
 import { Tracker, type TrackerBridge } from './Tracker';
 import { DEGREE_FINGERS, HandShape, qualityFingers } from './HandShape';
 import './Player.css';
@@ -299,28 +299,14 @@ export default function GuidedPlayer({
       const qr = Math.round((lmk?.right ? wristTilt(lmk.right, 'Right') : 0) * 25) / 25;
       setTilts((p) => (p.left === ql && p.right === qr ? p : { left: ql, right: qr }));
 
-      // TEMP debug: publish live thumb geometry for the on-screen readout.
+      // Debug: live k-NN distance/votes for the on-screen readout (either hand).
       {
-        const rl = lmk?.right ?? null;
-        let dbg: string | null = null;
-        let firing = false;
-        if (rl && rl.length >= 21) {
-          const w = rl[0];
-          const stretch =
-            Math.hypot(rl[4].x - rl[2].x, rl[4].y - rl[2].y) /
-            (Math.hypot(rl[9].x - w.x, rl[9].y - w.y) || 1e-6);
-          const ratio = (pip: number, tip: number) => {
-            const dTip = Math.hypot(rl[tip].x - w.x, rl[tip].y - w.y);
-            const dPip = Math.hypot(rl[pip].x - w.x, rl[pip].y - w.y);
-            return dTip / dPip;
-          };
-          firing = isThumbsUp(rl);
-          dbg = `stretch ${stretch.toFixed(2)} · curl ${[ratio(6, 8), ratio(10, 12), ratio(14, 16), ratio(18, 20)]
-            .map((r) => r.toFixed(2))
-            .join('/')}`;
-        }
+        const rl = lmk?.right ?? lmk?.left ?? null;
+        const td = thumbsUpDebug(rl);
         setThumbDebug((prev) => {
-          const next = dbg ? `${firing ? '🔥 ' : ''}${dbg}` : null;
+          const next = td
+            ? `${td.hit ? '🔥 ' : ''}dist ${td.dist.toFixed(2)} (cap 0.48) · votes ${td.votes}/3`
+            : null;
           return prev === next ? prev : next;
         });
       }

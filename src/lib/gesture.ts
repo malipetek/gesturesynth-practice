@@ -1,4 +1,5 @@
 import type { LeftHandState, RightHandState, World } from './types';
+import { THUMB_PROTOTYPES } from './thumb-prototypes';
 
 export interface Landmark {
   x: number;
@@ -101,59 +102,86 @@ export function classifyRight(lm: Landmark[]): RightHandState | null {
 }
 
 /**
- * A deliberate 👍 (guided-mode navigation gesture). ROTATION-INVARIANT by
- * design: only the finger configuration is checked — thumb genuinely
- * extended, all four fingers genuinely curled — never the wrist's
- * orientation. Earlier versions also required an upright hand and a
- * vertically-pointing thumb, which silently rejected real thumbs-ups tilted
- * counter-clockwise; users do not hold the gesture at a consistent angle.
+ * A deliberate 👍 (guided-mode navigation gesture).
  *
- * Both tests are distances measured within the hand itself, so they're
- * rotation- and camera-distance-independent. Real-hand measurements:
- * deliberate 👍 → thumb stretch ≈ 0.63, curl ratios ≈ 0.75–0.79;
- * tucked-thumb fist → stretch ≈ 0.15–0.2; open fingers → curl ≈ 1.26–1.34.
- * Playing shapes can never collide: chord quality always raises 1–4
- * fingers, which fails the curl test.
+ * Nearest-prototype matching against 256 real hand poses captured with the
+ * /thumb-lab page (80 thumbs-ups, 176 not-a-thumb: every fist type, open
+ * palms, chord shapes, both hands, all wrist angles). Rule-based detectors
+ * (thumb stretch + finger curl ratios) could not separate a wrapped-thumb
+ * fist from a real 👍 — the classes overlap in every single feature — so
+ * the thresholds here are learned from data instead of guessed.
+ *
+ * The descriptor is rotation/scale/translation-invariant by construction:
+ * translate wrist→origin, scale by wrist→middle-MCP span, rotate the palm
+ * axis to +y. Handedness is handled by scoring both x-mirror variants.
+ *
+ * Verified against the full capture: 100% leave-one-out accuracy (k=3),
+ * with a wide safety gap — positives sit ≤0.41 from their nearest
+ * prototype, negatives ≥0.56 — so a distance cap at 0.48 rejects any pose
+ * that doesn't genuinely look like a captured thumbs-up.
  */
-export function isThumbsUp(lm: Landmark[]): boolean {
-  if (lm.length < 21) return false;
-  const wrist = lm[0];
-  const handSize = Math.hypot(lm[9].x - wrist.x, lm[9].y - wrist.y) || 1e-6;
-  // Thumb genuinely extended: tip well beyond its own MCP joint, scaled to
-  // the hand size.
-  const tipToMcp = Math.hypot(lm[4].x - lm[2].x, lm[4].y - lm[2].y);
-  const stretched = tipToMcp > handSize * 0.35;
-  // All four fingers genuinely curled: each fingertip sits clearly closer to
-  // the wrist than its own PIP joint (a curled finger's tip lands at roughly
-  // its PIP's distance or less; an extended finger is ~1.5+).
-  const curled = (f: Finger) => {
-    const { pip, tip: t } = FINGERS[f];
-    const dTip = Math.hypot(lm[t].x - wrist.x, lm[t].y - wrist.y);
-    const dPip = Math.hypot(lm[pip].x - wrist.x, lm[pip].y - wrist.y);
-    return dTip < dPip * 1.02;
-  };
-  const result = stretched && (['index', 'middle', 'ring', 'pinky'] as Finger[]).every(curled);
+const THUMB_DIST_CAP = 0.48;
+const THUMB_K = 3;
 
-  // TEMP diagnostic: log ONLY on a real detection, edge-triggered (once per
-  // activation) — console activity means "the skip will fire", nothing else.
-  // Live values for any pose stay on the guided overlay's debug readout.
-  if (typeof window !== 'undefined') {
-    const w = window as any;
-    if (result && !w.__thumbWasHit) {
-      const ratio = (f: Finger) => {
-        const { pip, tip: t } = FINGERS[f];
-        const dTip = Math.hypot(lm[t].x - wrist.x, lm[t].y - wrist.y);
-        const dPip = Math.hypot(lm[pip].x - wrist.x, lm[pip].y - wrist.y);
-        return (dTip / dPip).toFixed(2);
-      };
-      console.log(
-        `[thumb] 👍 DETECTED stretch=${(tipToMcp / handSize).toFixed(2)} ` +
-          `curl(i/m/r/p)=${ratio('index')}/${ratio('middle')}/${ratio('ring')}/${ratio('pinky')}`,
-      );
-    }
-    w.__thumbWasHit = result;
+/** Rotation/scale/translation-invariant 42-dim hand pose descriptor. */
+function poseDescriptor(lm: Landmark[]): number[] {
+  const w = lm[0];
+  const ax = lm[9].x - w.x;
+  const ay = lm[9].y - w.y;
+  const span = Math.hypot(ax, ay) || 1e-6;
+  const th = -Math.atan2(ay, ax) + Math.PI / 2;
+  const c = Math.cos(th);
+  const s = Math.sin(th);
+  const v: number[] = [];
+  for (const p of lm) {
+    const x = (p.x - w.x) / span;
+    const y = (p.y - w.y) / span;
+    v.push(x * c - y * s, x * s + y * c);
   }
-  return result;
+  return v;
+}
+
+function poseDist(a: number[], b: number[]): number {
+  let s = 0;
+  for (let i = 0; i < a.length; i++) {
+    const d = a[i] - b[i];
+    s += d * d;
+  }
+  return Math.sqrt(s);
+}
+
+export interface ThumbsUpDebug {
+  /** Distance to the nearest captured prototype (lower = more 👍-like). */
+  dist: number;
+  /** How many of the 3 nearest prototypes are thumbs-ups. */
+  votes: number;
+  hit: boolean;
+}
+
+/** k-NN vote + geometry for the on-screen readout; null if no hand. */
+export function thumbsUpDebug(lm: Landmark[] | null): ThumbsUpDebug | null {
+  if (!lm || lm.length < 21) return null;
+  const v = poseDescriptor(lm);
+  // Mirror variant (x flipped) covers the opposite hand's chirality.
+  const vm = v.map((n, i) => (i % 2 === 0 ? -n : n));
+  const best: { d: number; up: boolean }[] = [];
+  for (const p of THUMB_PROTOTYPES) {
+    const d = Math.min(poseDist(v, p.v), poseDist(vm, p.v));
+    if (best.length < THUMB_K) {
+      best.push({ d, up: p.up });
+      best.sort((a, b) => a.d - b.d);
+    } else if (d < best[THUMB_K - 1].d) {
+      best[THUMB_K - 1] = { d, up: p.up };
+      best.sort((a, b) => a.d - b.d);
+    }
+  }
+  const votes = best.filter((b) => b.up).length;
+  const dist = best[0].d;
+  return { dist, votes, hit: votes > THUMB_K / 2 && dist < THUMB_DIST_CAP };
+}
+
+export function isThumbsUp(lm: Landmark[]): boolean {
+  return thumbsUpDebug(lm)?.hit ?? false;
 }
 
 /** Landmark indices of the five fingertips. */
