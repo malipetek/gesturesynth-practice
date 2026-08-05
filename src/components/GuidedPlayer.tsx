@@ -143,6 +143,7 @@ export default function GuidedPlayer({
   const targetRef = useRef<GestureTarget | null>(null);
   const holdSinceRef = useRef<number | null>(null);
   const thumbSinceRef = useRef<number | null>(null);
+  const thumbPrevRef = useRef<{ x: number; y: number }[] | null>(null);
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stepStartedAtRef = useRef<number>(performance.now());
   const reportStateSigRef = useRef('');
@@ -264,17 +265,37 @@ export default function GuidedPlayer({
     const loop = () => {
       raf = requestAnimationFrame(loop);
 
-      // 👍 Thumbs-up = skip to the next section. isThumbsUp is
-      // rotation-invariant (thumb extended + fingers truly curled — wrist
-      // orientation doesn't matter), and a chord shape always has 1–4
-      // fingers raised, so playing can never look like a thumbs-up.
+      // 👍 Thumbs-up = skip to the next section. Two gates:
+      //  1. k-NN pose match (isThumbsUp — prototype-learned, both hands).
+      //  2. STABILITY: the pose must be nearly motionless. A deliberate 👍 is
+      //     held rock-steady; the false positives we chased were transient
+      //     EMA-blended poses while MOVING between chord shapes — those never
+      //     appear in static captures but can sit in the thumbs-up region for
+      //     a slow transition. Movement resets the hold timer.
       const ph = phaseRef.current;
       if (ph === 'stepping' || ph === 'section-done') {
         // Either hand may flash the skip gesture.
         const hands = frameBridge.current.landmarksRef?.current;
-        const up =
-          (!!hands?.right && isThumbsUp(hands.right)) ||
-          (!!hands?.left && isThumbsUp(hands.left));
+        const firingHand = hands?.right && isThumbsUp(hands.right) ? hands.right
+          : hands?.left && isThumbsUp(hands.left) ? hands.left
+          : null;
+        let stable = false;
+        if (firingHand) {
+          const span =
+            Math.hypot(firingHand[9].x - firingHand[0].x, firingHand[9].y - firingHand[0].y) || 1e-6;
+          const prev = thumbPrevRef.current;
+          if (prev) {
+            let move = 0;
+            for (let i = 0; i < 21; i++)
+              move += Math.hypot(firingHand[i].x - prev[i].x, firingHand[i].y - prev[i].y);
+            move /= 21 * span;
+            stable = move < 0.015; // <1.5% of hand span/frame = deliberate hold
+          }
+          thumbPrevRef.current = firingHand.map((p) => ({ x: p.x, y: p.y }));
+        } else {
+          thumbPrevRef.current = null;
+        }
+        const up = firingHand !== null && stable;
         if (up) {
           if (thumbSinceRef.current === null) thumbSinceRef.current = performance.now();
           const heldMs = performance.now() - thumbSinceRef.current;
