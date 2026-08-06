@@ -103,6 +103,16 @@ export default function FreeformPlayer({
     };
   }, []);
 
+  // Nod fire indicator — a brief flash so you can SEE the articulation
+  // register even before you hear it (detection vs. sound debugging).
+  const [nodFlash, setNodFlash] = useState<'play' | 'choke' | null>(null);
+  const nodFlashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flashNod = useCallback((kind: 'play' | 'choke') => {
+    setNodFlash(kind);
+    if (nodFlashTimeout.current) clearTimeout(nodFlashTimeout.current);
+    nodFlashTimeout.current = setTimeout(() => setNodFlash(null), 220);
+  }, []);
+
   // Live instrument loop — mirrors their App.tsx frame loop.
   useEffect(() => {
     let raf = 0;
@@ -122,8 +132,13 @@ export default function FreeformPlayer({
         const lmk = frameBridge.current.landmarksRef?.current;
         for (const hand of ['left', 'right'] as const) {
           const ev = nods[hand].update(lmk?.[hand] ?? null, now, dt);
-          if (ev === 'forward') voice.articulate();
-          else if (ev === 'backward') voice.choke();
+          if (ev === 'forward') {
+            voice.articulate();
+            flashNod('play');
+          } else if (ev === 'backward') {
+            voice.choke();
+            flashNod('choke');
+          }
         }
         const frame = frameBridge.current.frameRef?.current ?? null;
         const deg = frame?.left?.degree ?? null;
@@ -226,6 +241,12 @@ export default function FreeformPlayer({
           <div className="free-hud glass">
             <span className={`free-chord${hud.degree ? ` deg deg-${hud.degree}` : ''}`}>
               {hud.chord}
+            </span>
+            <span
+              className={`nod-flash${nodFlash ? ` on ${nodFlash}` : ''}`}
+              title="Nod articulation: flick forward = re-play, flick backward = silence"
+            >
+              {nodFlash === 'choke' ? '◼ choke' : '▶ play'}
             </span>
             <span className="free-quality">
               {hud.quality}

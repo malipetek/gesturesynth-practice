@@ -861,6 +861,32 @@ kbd {
   border: 1px solid var(--line);
 }
 
+/* Nod articulation fire indicator (freeform HUD). */
+.nod-flash {
+  opacity: 0;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  transition: opacity 0.12s ease;
+  min-width: 62px;
+  text-align: left;
+}
+
+.nod-flash.on {
+  opacity: 1;
+}
+
+.nod-flash.play {
+  color: #3dffe0;
+  text-shadow: 0 0 12px rgba(61, 255, 224, 0.6);
+}
+
+.nod-flash.choke {
+  color: #ff6b5a;
+  text-shadow: 0 0 12px rgba(255, 107, 90, 0.6);
+}
+
+
 .free-hud {
   position: fixed;
   top: 88px;

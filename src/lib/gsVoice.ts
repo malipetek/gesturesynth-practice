@@ -131,9 +131,10 @@ export class GSVoice {
 
   /**
    * Nod articulation (our addition — no upstream equivalent). Forward flick:
-   * re-attack the held chord with a fast dip-and-restore, so repeated notes
-   * read as separate attacks without re-forming the gesture. Also releases
-   * the choke latch.
+   * re-attack the held chord — cut in 10 ms, hold a ~70 ms gap, restore in
+   * 45 ms. The gap is what the ear registers as a new note; anything under
+   * ~30 ms total reads as a click, not a re-trigger (found in real-hands
+   * testing). Also releases the choke latch.
    */
   articulate(): void {
     this.choked = false;
@@ -141,8 +142,9 @@ export class GSVoice {
     const now = this.ctx.currentTime;
     g.cancelScheduledValues(now);
     g.setValueAtTime(g.value, now);
-    g.linearRampToValueAtTime(0, now + 0.012);
-    g.linearRampToValueAtTime(this.liveVol, now + 0.045);
+    g.linearRampToValueAtTime(0, now + 0.01);
+    g.setValueAtTime(0, now + 0.08);
+    g.linearRampToValueAtTime(this.liveVol, now + 0.125);
   }
 
   /** Backward flick: cut the held chord NOW and keep it cut (latched). */
