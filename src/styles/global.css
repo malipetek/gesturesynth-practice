@@ -92,12 +92,20 @@ main {
 }
 
 .brand {
+  display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
   font-family: var(--font-display);
   font-weight: 700;
   letter-spacing: 0.02em;
   color: var(--mint);
 }
 
+.brand img {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 8px;
+}
 .brand:hover {
   text-decoration: none;
   opacity: 0.9;
