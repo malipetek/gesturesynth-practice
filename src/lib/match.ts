@@ -1,4 +1,4 @@
-import { Chord, Note } from 'tonal';
+import { Chord, Interval, Note } from 'tonal';
 import type { GestureTarget, HandFrame, MatchReport, World } from './types';
 import { QUALITY_LABELS } from './types';
 
@@ -22,29 +22,54 @@ export function compareFrame(frame: HandFrame | null, target: GestureTarget): Ma
   };
 }
 
-/** Numeric oscillator frequencies for a chord symbol, with ±1 octave shift. */
+/**
+ * Numeric oscillator frequencies for a chord symbol, with ±1 octave shift.
+ * Fallback for symbols chordRootHz can't parse — voiced from the GS key
+ * register (root at GS_KEY_HZ of the tonic) so even the fallback stays in
+ * the instrument's band.
+ */
 export function chordNotes(chordName: string, octaveShift = 0): number[] {
   const mul = Math.pow(2, octaveShift);
-  return (Chord.get(chordName).notes as string[])
-    .map((n) => {
-      const midi = 60 + Note.chroma(n);
-      return Number.isFinite(midi) ? 440 * Math.pow(2, (midi - 69) / 12) * mul : 0;
-    })
-    .filter((f) => f > 0);
+  const chord = Chord.get(chordName);
+  const tonicChroma = chord.tonic ? Note.chroma(chord.tonic) : NaN;
+  if (!Number.isFinite(tonicChroma)) return [];
+  const rootHz = GS_KEY_HZ[tonicChroma];
+  return (chord.intervals as string[]).map((ivl) => {
+    const semis = Interval.semitones(ivl);
+    return typeof semis === 'number' ? rootHz * Math.pow(2, semis / 12) * mul : 0;
+  }).filter((f) => f > 0);
 }
 
 const SEMI = Math.pow(2, 1 / 12);
 
 /**
- * Root frequency of a chord symbol in Gesture Synth's register (C4 = 261.63
- * for "C"), matching their key table.
+ * Root frequency of a chord symbol, using Gesture Synth's EXACT key table
+ * (verified in the gesture-synth-weld.vercel.app keySelect + its ÷2 wrap
+ * rule for Gb/G/Ab). Their table is NOT octave-consistent — A/Bb/B sit an
+ * octave below C, and Gb/G/Ab wrap down too — so every key's tonic lands in
+ * the 185–350 Hz band. Indexed by pitch class (C=0 … B=11).
  */
+const GS_KEY_HZ: readonly number[] = [
+  261.63, // C
+  277.18, // Db / C#
+  293.66, // D
+  311.13, // Eb / D#
+  329.63, // E
+  349.23, // F
+  369.99 / 2, // Gb / F# (their ÷2 rule)
+  392.0 / 2, // G (their ÷2 rule)
+  415.3 / 2, // Ab / G# (their ÷2 rule)
+  220.0, // A
+  233.08, // Bb / A#
+  246.94, // B
+];
+
 export function chordRootHz(chordName: string): number | null {
   const tonic = Chord.get(chordName).tonic;
   if (!tonic) return null;
   const chroma = Note.chroma(tonic);
   if (!Number.isFinite(chroma)) return null;
-  return 440 * Math.pow(2, (60 + chroma - 69) / 12);
+  return GS_KEY_HZ[chroma];
 }
 
 /**

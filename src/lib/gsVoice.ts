@@ -37,7 +37,7 @@
 const FILTER_BASE_HZ = 1200;
 const FILTER_BASE_Q = 0.7;
 const FILTER_SMOOTH_S = 0.04;
-const VOLUME_RAMP_S = 0.05;
+const VOLUME_RAMP_S = 0.03; // their updateVolume time constant
 const CLICK_LEVEL = 0.25;
 const STAB_ATTACK_S = 0.006;
 
@@ -116,7 +116,10 @@ export class GSVoice {
   /** Right-wrist height → chord volume (absolute 0..1, 50 ms ramp — theirs). */
   setVolume(volume: number): void {
     const clamped = Math.max(0, Math.min(1, volume));
-    this.liveGain.gain.linearRampToValueAtTime(clamped, this.ctx.currentTime + VOLUME_RAMP_S);
+    // Their updateVolume: exponential approach with a 30 ms time constant,
+    // called every frame — not a linear ramp (ramps stack/lag when re-issued
+    // per frame and feel different under a moving wrist).
+    this.liveGain.gain.setTargetAtTime(clamped, this.ctx.currentTime, VOLUME_RAMP_S);
   }
 
   /** Lowpass sweep from right-wrist lateral lean, −1..1. */
