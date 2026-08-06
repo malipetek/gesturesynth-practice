@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as Tone from 'tone';
 import type { GestureTarget, MatchReport } from '../lib/types';
 import { DEGREE_LABELS } from '../lib/types';
