@@ -6,6 +6,7 @@ import type { TrackingStatus } from '../lib/useHandTracking';
 import { compareFrame, qualityLabel, targetNotes } from '../lib/match';
 import { audioContextFromTone, GSVoice } from '../lib/gsVoice';
 import { isThumbsUp, thumbsUpDebug, wristTilt } from '../lib/gesture';
+import { NodDetector } from '../lib/nod';
 import { Tracker, type TrackerBridge } from './Tracker';
 import { DEGREE_FINGERS, HandShape, qualityFingers } from './HandShape';
 import './Player.css';
@@ -144,6 +145,8 @@ export default function GuidedPlayer({
   const holdSinceRef = useRef<number | null>(null);
   const thumbSinceRef = useRef<number | null>(null);
   const thumbPrevRef = useRef<{ x: number; y: number }[] | null>(null);
+  const nodRef = useRef({ left: new NodDetector(), right: new NodDetector() });
+  const nodLastTRef = useRef<number | null>(null);
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stepStartedAtRef = useRef<number>(performance.now());
   const reportStateSigRef = useRef('');
@@ -355,6 +358,18 @@ export default function GuidedPlayer({
 
       if (!voice) return;
       if (frame?.right) voice.updateFilterSweep(frame.right.tone);
+      // Nod articulation (ours): forward flick re-attacks, backward chokes.
+      {
+        const now = performance.now();
+        const dt = Math.min(0.1, (now - (nodLastTRef.current ?? now)) / 1000);
+        nodLastTRef.current = now;
+        const lmk = frameBridge.current.landmarksRef?.current;
+        for (const hand of ['left', 'right'] as const) {
+          const ev = nodRef.current[hand].update(lmk?.[hand] ?? null, now, dt);
+          if (ev === 'forward') voice.articulate();
+          else if (ev === 'backward') voice.choke();
+        }
+      }
       if (rep && rep.score >= 1 && cur) {
         voice.playNotes(targetNotes(cur.ev.target, cur.ev.chordName));
         voice.setVolume(frame?.right?.volume ?? 0.5);

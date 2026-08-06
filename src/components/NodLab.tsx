@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import type { GestureTarget, MatchReport } from '../lib/types';
 import type { TrackingStatus } from '../lib/useHandTracking';
 import { Tracker, type TrackerBridge } from './Tracker';
+import { NodDetector, NOD_THRESHOLD, NOD_FAST_TAU_S, NOD_SLOW_TAU_S } from '../lib/nod';
 import './Player.css';
 import './ThumbLab.css';
 import './NodLab.css';
@@ -38,9 +39,6 @@ interface TraceSample {
 }
 
 const WINDOW_MS = 6000;
-const FAST_TAU_S = 0.08;
-const SLOW_TAU_S = 1.5;
-const REFRACTORY_MS = 150;
 const MAX_SAMPLES = 60000;
 
 const STATUS_LABEL: Record<TrackingStatus, string> = {
@@ -55,18 +53,11 @@ const STATUS_LABEL: Record<TrackingStatus, string> = {
 interface Pt {
   x: number;
   y: number;
-  z: number;
-}
-
-/** Mean fingertip z relative to the wrist — the raw nod channel. */
-function nodSignal(lm: Pt[]): number {
-  return (lm[8].z + lm[12].z + lm[16].z + lm[20].z) / 4 - lm[0].z;
+  z?: number;
 }
 
 interface HandFilter {
-  fast: number | null;
-  slow: number;
-  lastFire: number;
+  detector: NodDetector;
 }
 
 export default function NodLab() {
@@ -79,9 +70,10 @@ export default function NodLab() {
   const armedRef = useRef<Label | null>(null);
   const samplesRef = useRef<TraceSample[]>([]);
   const [sampleCount, setSampleCount] = useState(0);
-  const [threshold, setThreshold] = useState(0.03);
-  const thresholdRef = useRef(0.03);
+  const [threshold, setThreshold] = useState(NOD_THRESHOLD);
+  const thresholdRef = useRef(NOD_THRESHOLD);
   const [fires, setFires] = useState({ left: 0, right: 0 });
+  const [backFires, setBackFires] = useState({ left: 0, right: 0 });
   const [readout, setReadout] = useState<{ left: string; right: string }>({
     left: '—',
     right: '—',
@@ -91,10 +83,10 @@ export default function NodLab() {
   // Ring buffer of chart points: t, hp per hand (null when hand absent).
   const traceRef = useRef<{ t: number; left: number | null; right: number | null }[]>([]);
   const filtersRef = useRef<Record<'left' | 'right', HandFilter>>({
-    left: { fast: null, slow: 0, lastFire: 0 },
-    right: { fast: null, slow: 0, lastFire: 0 },
+    left: { detector: new NodDetector() },
+    right: { detector: new NodDetector() },
   });
-  const fireMarksRef = useRef<{ t: number; hand: 'left' | 'right' }[]>([]);
+  const fireMarksRef = useRef<{ t: number; hand: 'left' | 'right'; dir: 'fwd' | 'back' }[]>([]);
   const lastReadoutRef = useRef(0);
 
   const arm = useCallback((label: Label | null) => {
@@ -124,31 +116,29 @@ export default function NodLab() {
       for (const hand of ['left', 'right'] as const) {
         const lm = lmk?.[hand] as Pt[] | null | undefined;
         const f = filtersRef.current[hand];
-        if (!lm || lm.length < 21) {
-          f.fast = null; // re-seed on reacquire so re-entry never fires
-          continue;
-        }
-        const raw = nodSignal(lm);
-        if (f.fast === null) {
-          f.fast = raw;
-          f.slow = raw;
-          continue;
-        }
-        f.fast += (raw - f.fast) * (1 - Math.exp(-dt / FAST_TAU_S));
-        f.slow += (raw - f.slow) * (1 - Math.exp(-dt / SLOW_TAU_S));
-        const hp = f.fast - f.slow;
+        f.detector.threshold = thr;
+        const ev = f.detector.update(lm, now, dt);
+        const hp = f.detector.hp;
+        if (hp === null) continue;
         hpOut[hand] = hp;
 
-        // Fire: strong swing TOWARD the camera (negative z), with refractory.
-        if (hp < -thr && now - f.lastFire > REFRACTORY_MS) {
-          f.lastFire = now;
-          fireMarksRef.current.push({ t: now, hand });
-          setFires((p) => ({ ...p, [hand]: p[hand] + 1 }));
+        if (ev) {
+          fireMarksRef.current.push({ t: now, hand, dir: ev === 'forward' ? 'fwd' : 'back' });
+          if (ev === 'forward') setFires((p) => ({ ...p, [hand]: p[hand] + 1 }));
+          else setBackFires((p) => ({ ...p, [hand]: p[hand] + 1 }));
         }
 
         const label = armedRef.current;
         if (label && samplesRef.current.length < MAX_SAMPLES) {
-          samplesRef.current.push({ t: now, hand, raw, fast: f.fast, slow: f.slow, hp, label });
+          samplesRef.current.push({
+            t: now,
+            hand,
+            raw: f.detector.current ?? 0,
+            fast: f.detector.current ?? 0,
+            slow: f.detector.baseline,
+            hp,
+            label,
+          });
         }
       }
 
@@ -213,12 +203,18 @@ export default function NodLab() {
             g.stroke();
           }
 
+          // fire ticks: forward (play) at the top, backward (choke) at the bottom
           for (const m of fireMarksRef.current) {
             g.strokeStyle = colors[m.hand];
             g.lineWidth = 2 * dpr;
             g.beginPath();
-            g.moveTo(x(m.t), 4 * dpr);
-            g.lineTo(x(m.t), 16 * dpr);
+            if (m.dir === 'fwd') {
+              g.moveTo(x(m.t), 4 * dpr);
+              g.lineTo(x(m.t), 16 * dpr);
+            } else {
+              g.moveTo(x(m.t), H - 4 * dpr);
+              g.lineTo(x(m.t), H - 16 * dpr);
+            }
             g.stroke();
           }
         }
@@ -228,10 +224,10 @@ export default function NodLab() {
       if (now - lastReadoutRef.current > 125) {
         lastReadoutRef.current = now;
         const fmt = (hand: 'left' | 'right') => {
-          const f = filtersRef.current[hand];
-          if (f.fast === null) return '—';
+          const d = filtersRef.current[hand].detector;
+          if (d.current === null) return '—';
           const hp = hpOut[hand] ?? 0;
-          return `raw ${f.fast.toFixed(3)} · base ${f.slow.toFixed(3)} · hp ${hp >= 0 ? '+' : ''}${hp.toFixed(3)}`;
+          return `raw ${d.current.toFixed(3)} · base ${d.baseline.toFixed(3)} · hp ${hp >= 0 ? '+' : ''}${hp.toFixed(3)}`;
         };
         setReadout({ left: fmt('left'), right: fmt('right') });
         setSampleCount(samplesRef.current.length);
@@ -257,8 +253,8 @@ export default function NodLab() {
       app: 'gesturesynth-practice nod-lab',
       version: 1,
       capturedAt: new Date().toISOString(),
-      fastTauS: FAST_TAU_S,
-      slowTauS: SLOW_TAU_S,
+      fastTauS: NOD_FAST_TAU_S,
+      slowTauS: NOD_SLOW_TAU_S,
       samples: samplesRef.current,
     };
     const blob = new Blob([JSON.stringify(payload)], { type: 'application/json' });
@@ -275,6 +271,7 @@ export default function NodLab() {
     samplesRef.current = [];
     setSampleCount(0);
     setFires({ left: 0, right: 0 });
+    setBackFires({ left: 0, right: 0 });
   }, []);
 
   return (
@@ -294,9 +291,9 @@ export default function NodLab() {
         </p>
         <p className="nod-explainer">
           The strip shows the <em>flick channel</em> (fast − slow baseline) of each hand's
-          depth signal. <strong>Flick a hand forward</strong> (fingers swing toward the
-          camera, like tapping a table with your wrist anchored) and watch the spike.
-          Slow posture drift should stay flat — the baseline auto-follows it.
+          depth signal. <strong>Flick forward</strong> (toward the camera) = <em>play</em>,
+          tick at the top; <strong>flick backward</strong> = <em>silence</em>, tick at the
+          bottom. Slow posture drift stays flat — the baseline auto-follows it.
         </p>
         <div className="nod-chart-wrap">
           <canvas ref={canvasRef} className="nod-chart" />
@@ -307,7 +304,7 @@ export default function NodLab() {
         </div>
         <label className="nod-threshold">
           <span>
-            fire threshold <strong>{threshold.toFixed(3)}</strong> (fires below −thr)
+            threshold <strong>{threshold.toFixed(3)}</strong> (play below −thr · choke above +thr)
           </span>
           <input
             type="range"
@@ -319,7 +316,8 @@ export default function NodLab() {
           />
         </label>
         <p className="lab-counts">
-          fires — L {fires.left} · R {fires.right} · recorded samples {sampleCount}
+          play — L {fires.left} · R {fires.right} · choke — L {backFires.left} · R{' '}
+          {backFires.right} · recorded samples {sampleCount}
         </p>
         <div className="lab-arm">
           <button

@@ -71,6 +71,10 @@ export class GSVoice {
   private readonly liveGain: GainNode;
   private oscs: OscillatorNode[] = [];
   private currentKey: string | null = null;
+  /** Last wrist volume requested — the target articulate() restores to. */
+  private liveVol = 0;
+  /** Choke latch: a backward nod mutes the held chord until re-articulated. */
+  private choked = false;
   private thereminOsc: OscillatorNode | null = null;
   private thereminGain: GainNode | null = null;
   private metroSound: MetronomeSound = 'click';
@@ -101,6 +105,7 @@ export class GSVoice {
     this.stopTheremin();
     const key = freqs.map((f) => f.toFixed(1)).join(',');
     if (key === this.currentKey) return;
+    this.choked = false; // a new chord is a fresh note — always sounds
     this.stopChordOscillators();
     this.oscs = freqs.map((f) => {
       const osc = this.ctx.createOscillator();
@@ -116,10 +121,38 @@ export class GSVoice {
   /** Right-wrist height → chord volume (absolute 0..1, 50 ms ramp — theirs). */
   setVolume(volume: number): void {
     const clamped = Math.max(0, Math.min(1, volume));
+    this.liveVol = clamped;
+    if (this.choked) return; // a backward nod holds the gate shut
     // Their updateVolume: exponential approach with a 30 ms time constant,
     // called every frame — not a linear ramp (ramps stack/lag when re-issued
     // per frame and feel different under a moving wrist).
     this.liveGain.gain.setTargetAtTime(clamped, this.ctx.currentTime, VOLUME_RAMP_S);
+  }
+
+  /**
+   * Nod articulation (our addition — no upstream equivalent). Forward flick:
+   * re-attack the held chord with a fast dip-and-restore, so repeated notes
+   * read as separate attacks without re-forming the gesture. Also releases
+   * the choke latch.
+   */
+  articulate(): void {
+    this.choked = false;
+    const g = this.liveGain.gain;
+    const now = this.ctx.currentTime;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value, now);
+    g.linearRampToValueAtTime(0, now + 0.012);
+    g.linearRampToValueAtTime(this.liveVol, now + 0.045);
+  }
+
+  /** Backward flick: cut the held chord NOW and keep it cut (latched). */
+  choke(): void {
+    this.choked = true;
+    const g = this.liveGain.gain;
+    const now = this.ctx.currentTime;
+    g.cancelScheduledValues(now);
+    g.setValueAtTime(g.value, now);
+    g.linearRampToValueAtTime(0, now + 0.015);
   }
 
   /** Lowpass sweep from right-wrist lateral lean, −1..1. */
@@ -286,6 +319,7 @@ export class GSVoice {
   }
 
   stopAll(): void {
+    this.choked = false;
     this.setVolume(0);
     this.stopChordOscillators();
     this.stopTheremin();

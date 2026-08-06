@@ -7,6 +7,7 @@ import {
   type MetronomeSound,
   type SynthTone,
 } from '../lib/gsVoice';
+import { NodDetector } from '../lib/nod';
 import {
   compareFrame,
   degreeRootHz,
@@ -376,9 +377,23 @@ export default function Player({ song }: { song: Song }) {
   useEffect(() => {
     if (state.phase !== 'playing' || state.mode !== 'track') return;
     let raf = 0;
+    let lastT = performance.now();
+    const nods = { left: new NodDetector(), right: new NodDetector() };
     const loop = () => {
+      const now = performance.now();
+      const dt = Math.min(0.1, (now - lastT) / 1000);
+      lastT = now;
       const voice = voiceRef.current;
       if (voice) {
+        // Nod articulation (ours): forward flick re-attacks, backward chokes.
+        if (voiceModeRef.current !== 'auto') {
+          const lmk = frameBridge.current.landmarksRef?.current;
+          for (const hand of ['left', 'right'] as const) {
+            const ev = nods[hand].update(lmk?.[hand] ?? null, now, dt);
+            if (ev === 'forward') voice.articulate();
+            else if (ev === 'backward') voice.choke();
+          }
+        }
         const frame = frameBridge.current.frameRef?.current ?? null;
         if (frame?.right) voice.updateFilterSweep(frame.right.tone);
         if (voiceModeRef.current === 'auto') {

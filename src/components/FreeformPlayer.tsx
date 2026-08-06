@@ -6,6 +6,7 @@ import type { TrackingStatus } from '../lib/useHandTracking';
 import { degreeRootHz, qualityLabel, voicingNotes } from '../lib/match';
 import { pitchFromHandY, volumeFromWrist } from '../lib/gesture';
 import { audioContextFromTone, GSVoice } from '../lib/gsVoice';
+import { NodDetector } from '../lib/nod';
 import { Tracker, type TrackerBridge } from './Tracker';
 import './Player.css';
 
@@ -105,12 +106,25 @@ export default function FreeformPlayer({
   // Live instrument loop — mirrors their App.tsx frame loop.
   useEffect(() => {
     let raf = 0;
+    let lastT = performance.now();
+    const nods = { left: new NodDetector(), right: new NodDetector() };
     const loop = () => {
       raf = requestAnimationFrame(loop);
+      const now = performance.now();
+      const dt = Math.min(0.1, (now - lastT) / 1000);
+      lastT = now;
       const voice = voiceRef.current;
       if (!voice) return;
 
       if (modeRef.current === 'gesture') {
+        // Nod articulation (ours — no upstream equivalent): forward flick
+        // re-attacks the held chord, backward flick chokes it.
+        const lmk = frameBridge.current.landmarksRef?.current;
+        for (const hand of ['left', 'right'] as const) {
+          const ev = nods[hand].update(lmk?.[hand] ?? null, now, dt);
+          if (ev === 'forward') voice.articulate();
+          else if (ev === 'backward') voice.choke();
+        }
         const frame = frameBridge.current.frameRef?.current ?? null;
         const deg = frame?.left?.degree ?? null;
         const world = frame?.left?.world ?? null;
