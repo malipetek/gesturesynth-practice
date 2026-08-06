@@ -2,7 +2,11 @@
  * Faithful port of the Gesture Synth sound engine — verified against the
  * open-source repo (github.com/Ekmand/music-synth, src/audio/SynthEngine.ts):
  *
- *   one sawtooth osc per chord note → lowpass 1200 Hz / Q 0.7 → master gain → out
+ *   one osc per chord note → lowpass 1200 Hz / Q 0.7 → master gain → out
+ *
+ * The oscillator type is their toneSelect: triangle ("Warm Synth", the
+ * default on gesture-synth-weld.vercel.app — and ours), sawtooth ("Bright"),
+ * square ("Retro").
  *
  * Their WaveShaper runs with curve = null (a passthrough), so it is omitted
  * here. There is NO compressor/limiter anywhere in their chain — the raw
@@ -40,6 +44,21 @@ const STAB_ATTACK_S = 0.006;
 export type MetronomeSound = 'click' | 'wood' | 'beep' | 'hihat';
 
 /**
+ * Their toneSelect (verified in the gesture-synth-weld.vercel.app deployment,
+ * where "Warm Synth" is the default):
+ *   warm   → triangle (their default — the mellow one)
+ *   bright → sawtooth (what gesturesynth.com ships with)
+ *   retro  → square
+ */
+export type SynthTone = 'warm' | 'bright' | 'retro';
+
+export const TONE_OSC_TYPE: Record<SynthTone, OscillatorType> = {
+  warm: 'triangle',
+  bright: 'sawtooth',
+  retro: 'square',
+};
+
+/**
  * The GSVoice is raw Web Audio but must share Tone's context so scheduled
  * times line up with the Transport.
  */
@@ -56,6 +75,7 @@ export class GSVoice {
   private thereminGain: GainNode | null = null;
   private metroSound: MetronomeSound = 'click';
   private metroVolume = CLICK_LEVEL;
+  private tone: SynthTone = 'warm';
 
   constructor(private readonly ctx: AudioContext) {
     // Their chain: sawtooth oscs → swept lowpass → master gain → destination.
@@ -84,7 +104,7 @@ export class GSVoice {
     this.stopChordOscillators();
     this.oscs = freqs.map((f) => {
       const osc = this.ctx.createOscillator();
-      osc.type = 'sawtooth';
+      osc.type = TONE_OSC_TYPE[this.tone];
       osc.frequency.value = f;
       osc.connect(this.liveGain);
       osc.start();
@@ -129,7 +149,7 @@ export class GSVoice {
     gain.connect(this.sweepFilter);
     for (const f of freqs) {
       const osc = this.ctx.createOscillator();
-      osc.type = 'sawtooth';
+      osc.type = TONE_OSC_TYPE[this.tone];
       osc.frequency.value = f;
       osc.connect(gain);
       osc.start(time);
@@ -142,6 +162,14 @@ export class GSVoice {
   setMetronome(sound: MetronomeSound, volume: number): void {
     this.metroSound = sound;
     this.metroVolume = Math.max(0, Math.min(1, volume));
+  }
+
+  /** Their toneSelect behavior: force re-voice so the next chord uses it. */
+  setTone(tone: SynthTone): void {
+    if (this.tone === tone) return;
+    this.tone = tone;
+    this.currentKey = null;
+    this.stopChordOscillators();
   }
 
   /** Metronome tick — their four sounds, ported 1:1. */

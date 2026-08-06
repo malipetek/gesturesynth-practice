@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react';
 import type { MutableRefObject } from 'react';
 import * as Tone from 'tone';
-import { audioContextFromTone, GSVoice, type MetronomeSound } from '../lib/gsVoice';
+import {
+  audioContextFromTone,
+  GSVoice,
+  type MetronomeSound,
+  type SynthTone,
+} from '../lib/gsVoice';
 import {
   compareFrame,
   degreeRootHz,
@@ -303,6 +308,7 @@ export default function Player({ song }: { song: Song }) {
   useEffect(() => {
     settingsRef.current = settings;
     voiceRef.current?.setMetronome(settings.metroSound, settings.metroVolume);
+    voiceRef.current?.setTone(settings.tone);
     saveSettings(settings);
   }, [settings]);
   // Practice flow: guided = step through short sections at your own pace
@@ -416,6 +422,7 @@ export default function Player({ song }: { song: Song }) {
       try {
         const voice = (voiceRef.current ??= new GSVoice(audioContextFromTone(() => Tone.getContext())));
         voice.setMetronome(settingsRef.current.metroSound, settingsRef.current.metroVolume);
+        voice.setTone(settingsRef.current.tone);
         dispatch({ type: 'START' });
         schedulePlayback(song, listenOnly, voice, dispatch, frameBridge, activeIndexAtBeat, () =>
           voiceModeRef.current !== 'hands',
@@ -801,6 +808,19 @@ export default function Player({ song }: { song: Song }) {
               </button>
               {soundOpen && (
                 <div className="sound-pop">
+                  <label className="sound-row">
+                    <span>Tone</span>
+                    <select
+                      value={settings.tone}
+                      onChange={(e) =>
+                        setSettings((s) => ({ ...s, tone: e.target.value as SynthTone }))
+                      }
+                    >
+                      <option value="warm">Warm Synth</option>
+                      <option value="bright">Bright Synth</option>
+                      <option value="retro">Retro Synth</option>
+                    </select>
+                  </label>
                   <label className="sound-row">
                     <span>Metronome</span>
                     <select

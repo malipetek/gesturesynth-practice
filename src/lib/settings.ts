@@ -1,14 +1,17 @@
-import type { MetronomeSound } from './gsVoice';
+import type { MetronomeSound, SynthTone } from './gsVoice';
 
 /**
  * Practice sound settings, persisted to localStorage (same idea as Gesture
  * Synth's own 'music-synth-gesture-settings'). Defaults mirror their
- * initial settings, which are the ones the instrument ships with.
+ * initial settings, which are the ones the instrument ships with — the
+ * tone default is 'warm' (triangle), the default on
+ * gesture-synth-weld.vercel.app's toneSelect.
  */
 export interface PracticeSettings {
   metroSound: MetronomeSound;
   /** 0..1, their default is 0.25 */
   metroVolume: number;
+  tone: SynthTone;
 }
 
 const STORAGE_KEY = 'gs-practice-settings';
@@ -16,9 +19,11 @@ const STORAGE_KEY = 'gs-practice-settings';
 export const DEFAULT_SETTINGS: PracticeSettings = {
   metroSound: 'click',
   metroVolume: 0.25,
+  tone: 'warm',
 };
 
 const SOUNDS: MetronomeSound[] = ['click', 'wood', 'beep', 'hihat'];
+const TONES: SynthTone[] = ['warm', 'bright', 'retro'];
 
 export function loadSettings(): PracticeSettings {
   try {
@@ -33,6 +38,9 @@ export function loadSettings(): PracticeSettings {
         typeof parsed.metroVolume === 'number'
           ? Math.max(0, Math.min(1, parsed.metroVolume))
           : DEFAULT_SETTINGS.metroVolume,
+      tone: TONES.includes(parsed.tone as SynthTone)
+        ? (parsed.tone as SynthTone)
+        : 'warm',
     };
   } catch {
     return { ...DEFAULT_SETTINGS };
