@@ -1,0 +1,67 @@
+/* Nod Lab — strip chart + threshold control (panel/buttons come from ThumbLab.css). */
+
+.nod-panel {
+  max-width: 720px;
+}
+
+.nod-explainer {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+
+.nod-explainer.dim {
+  opacity: 0.75;
+  margin: 10px 0 0;
+  font-size: 12px;
+}
+
+.nod-chart-wrap {
+  border: 1px solid rgba(232, 244, 248, 0.14);
+  border-radius: 10px;
+  background: rgba(12, 18, 24, 0.55);
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.nod-chart {
+  display: block;
+  width: 100%;
+  height: 180px;
+}
+
+.nod-readout {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.nod-readout .l {
+  color: #3dffe0;
+}
+
+.nod-readout .r {
+  color: #ff6b5a;
+}
+
+.nod-threshold {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.nod-threshold strong {
+  color: #f0c65a;
+}
+
+.nod-threshold input[type='range'] {
+  width: 100%;
+  accent-color: #f0c65a;
+}

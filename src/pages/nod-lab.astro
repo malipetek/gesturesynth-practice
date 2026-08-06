@@ -1,0 +1,11 @@
+---
+import Layout from '../layouts/Layout.astro';
+import NodLab from '../components/NodLab';
+---
+
+<Layout
+	title="Nod Lab — Gesture Synth Practice"
+	description="Signal workbench for the forward-tilt articulation gesture: live depth-channel strip chart with auto-recalibrating baseline."
+>
+	<NodLab client:only="react" />
+</Layout>
