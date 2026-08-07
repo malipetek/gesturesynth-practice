@@ -115,6 +115,23 @@ export default function FreeformPlayer({
     nodFlashTimeout.current = setTimeout(() => setNodFlash(null), 220);
   }, []);
 
+  // Nod-gate mode: silent by default; a forward nod opens the gate (plays),
+  // a backward nod closes it (silence) — across chord changes too.
+  const [gateMode, setGateMode] = useState(false);
+  const [gateOpen, setGateOpen] = useState(false);
+  const toggleGateMode = useCallback(() => {
+    setGateMode((prev) => {
+      const next = !prev;
+      const voice = voiceRef.current;
+      if (voice) {
+        voice.setGateMode(next);
+        if (next) voice.choke(); // start silent
+      }
+      if (next) setGateOpen(false);
+      return next;
+    });
+  }, []);
+
   // Live instrument loop — mirrors their App.tsx frame loop.
   useEffect(() => {
     let raf = 0;
@@ -137,10 +154,12 @@ export default function FreeformPlayer({
           if (ev === 'forward') {
             voice.articulate();
             flashNod('play');
+            setGateOpen(true);
             nodChartRef.current?.mark(now, hand, 'fwd');
           } else if (ev === 'backward') {
             voice.choke();
             flashNod('choke');
+            setGateOpen(false);
             nodChartRef.current?.mark(now, hand, 'back');
           }
         }
@@ -285,10 +304,18 @@ export default function FreeformPlayer({
           </div>
           <div
             className="free-nod glass"
-            title="Nod articulation signal: flick forward (toward camera) = re-play · flick backward = silence"
+            title="Nod articulation signal: flick forward (toward camera) = play · flick backward = silence. Gate mode: silent until you nod forward."
           >
             <span className="free-nod-label">nod</span>
             <NodChart ref={nodChartRef} threshold={NOD_THRESHOLD} className="nod-chart compact" />
+            <button
+              type="button"
+              className={`nod-gate-toggle${gateMode ? ' on' : ''}`}
+              onClick={toggleGateMode}
+              title="Gate mode: chord stays SILENT until you flick forward; flick backward silences it again"
+            >
+              {gateMode ? (gateOpen ? '▶ gate open' : '◼ gated') : 'gate off'}
+            </button>
           </div>
         </>
       ) : (

@@ -75,6 +75,11 @@ export class GSVoice {
   private liveVol = 0;
   /** Choke latch: a backward nod mutes the held chord until re-articulated. */
   private choked = false;
+  /**
+   * Gate mode: inverted default — the chord is SILENT until a forward nod
+   * opens the gate, and stays silent across chord changes until then.
+   */
+  private gateMode = false;
   private thereminOsc: OscillatorNode | null = null;
   private thereminGain: GainNode | null = null;
   private metroSound: MetronomeSound = 'click';
@@ -105,7 +110,9 @@ export class GSVoice {
     this.stopTheremin();
     const key = freqs.map((f) => f.toFixed(1)).join(',');
     if (key === this.currentKey) return;
-    this.choked = false; // a new chord is a fresh note — always sounds
+    // A new chord is a fresh note — always sounds, EXCEPT in gate mode
+    // where only a forward nod opens the gate.
+    if (!this.gateMode) this.choked = false;
     this.stopChordOscillators();
     this.oscs = freqs.map((f) => {
       const osc = this.ctx.createOscillator();
@@ -155,6 +162,25 @@ export class GSVoice {
     g.cancelScheduledValues(now);
     g.setValueAtTime(g.value, now);
     g.linearRampToValueAtTime(0, now + 0.015);
+  }
+
+  /**
+   * Nod-gate mode (our "silent by default" mode): when on, the chord makes
+   * no sound until a forward nod opens the gate — even across chord
+   * changes. Backward nod (or turning the mode off and on) closes it.
+   */
+  setGateMode(on: boolean): void {
+    this.gateMode = on;
+    if (on) {
+      // Start gated: silent until the first forward nod.
+      this.choked = true;
+      this.liveGain.gain.setTargetAtTime(0, this.ctx.currentTime, VOLUME_RAMP_S);
+    }
+  }
+
+  /** Whether the gate is currently open (false = silenced by choke/gate). */
+  get isSounding(): boolean {
+    return !this.choked;
   }
 
   /** Lowpass sweep from right-wrist lateral lean, −1..1. */
