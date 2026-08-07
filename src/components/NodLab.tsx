@@ -3,6 +3,7 @@ import type { GestureTarget, MatchReport } from '../lib/types';
 import type { TrackingStatus } from '../lib/useHandTracking';
 import { Tracker, type TrackerBridge } from './Tracker';
 import { NodDetector, NOD_THRESHOLD, NOD_FAST_TAU_S, NOD_SLOW_TAU_S } from '../lib/nod';
+import NodChart, { type NodChartHandle } from './NodChart';
 import './Player.css';
 import './ThumbLab.css';
 import './NodLab.css';
@@ -38,7 +39,6 @@ interface TraceSample {
   label: Label;
 }
 
-const WINDOW_MS = 6000;
 const MAX_SAMPLES = 60000;
 
 const STATUS_LABEL: Record<TrackingStatus, string> = {
@@ -79,14 +79,11 @@ export default function NodLab() {
     right: '—',
   });
 
-  const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  // Ring buffer of chart points: t, hp per hand (null when hand absent).
-  const traceRef = useRef<{ t: number; left: number | null; right: number | null }[]>([]);
+  const chartRef = useRef<NodChartHandle | null>(null);
   const filtersRef = useRef<Record<'left' | 'right', HandFilter>>({
     left: { detector: new NodDetector() },
     right: { detector: new NodDetector() },
   });
-  const fireMarksRef = useRef<{ t: number; hand: 'left' | 'right'; dir: 'fwd' | 'back' }[]>([]);
   const lastReadoutRef = useRef(0);
 
   const arm = useCallback((label: Label | null) => {
@@ -123,7 +120,7 @@ export default function NodLab() {
         hpOut[hand] = hp;
 
         if (ev) {
-          fireMarksRef.current.push({ t: now, hand, dir: ev === 'forward' ? 'fwd' : 'back' });
+          chartRef.current?.mark(now, hand, ev === 'forward' ? 'fwd' : 'back');
           if (ev === 'forward') setFires((p) => ({ ...p, [hand]: p[hand] + 1 }));
           else setBackFires((p) => ({ ...p, [hand]: p[hand] + 1 }));
         }
@@ -142,83 +139,7 @@ export default function NodLab() {
         }
       }
 
-      traceRef.current.push({ t: now, left: hpOut.left, right: hpOut.right });
-      const cutoff = now - WINDOW_MS;
-      while (traceRef.current.length && traceRef.current[0].t < cutoff) traceRef.current.shift();
-      while (fireMarksRef.current.length && fireMarksRef.current[0].t < cutoff)
-        fireMarksRef.current.shift();
-
-      // --- chart ---
-      const canvas = canvasRef.current;
-      if (canvas) {
-        const dpr = window.devicePixelRatio || 1;
-        const W = canvas.clientWidth * dpr;
-        const H = canvas.clientHeight * dpr;
-        if (canvas.width !== W || canvas.height !== H) {
-          canvas.width = W;
-          canvas.height = H;
-        }
-        const g = canvas.getContext('2d');
-        if (g) {
-          g.clearRect(0, 0, W, H);
-          const y0 = H / 2;
-          const yScale = H / 0.3; // ±0.15 fills the strip
-          const x = (t: number) => W - ((now - t) / WINDOW_MS) * W;
-
-          g.strokeStyle = 'rgba(240,198,90,0.55)';
-          g.lineWidth = 1 * dpr;
-          g.setLineDash([4 * dpr, 4 * dpr]);
-          for (const s of [-1, 1]) {
-            g.beginPath();
-            g.moveTo(0, y0 - s * thr * yScale);
-            g.lineTo(W, y0 - s * thr * yScale);
-            g.stroke();
-          }
-          g.setLineDash([]);
-          g.strokeStyle = 'rgba(232,244,248,0.18)';
-          g.beginPath();
-          g.moveTo(0, y0);
-          g.lineTo(W, y0);
-          g.stroke();
-
-          const colors = { left: '#3dffe0', right: '#ff6b5a' } as const;
-          for (const hand of ['left', 'right'] as const) {
-            g.strokeStyle = colors[hand];
-            g.lineWidth = 1.5 * dpr;
-            g.beginPath();
-            let pen = false;
-            for (const p of traceRef.current) {
-              const v = p[hand];
-              if (v === null) {
-                pen = false;
-                continue;
-              }
-              const px = x(p.t);
-              const py = y0 - v * yScale;
-              if (!pen) {
-                g.moveTo(px, py);
-                pen = true;
-              } else g.lineTo(px, py);
-            }
-            g.stroke();
-          }
-
-          // fire ticks: forward (play) at the top, backward (choke) at the bottom
-          for (const m of fireMarksRef.current) {
-            g.strokeStyle = colors[m.hand];
-            g.lineWidth = 2 * dpr;
-            g.beginPath();
-            if (m.dir === 'fwd') {
-              g.moveTo(x(m.t), 4 * dpr);
-              g.lineTo(x(m.t), 16 * dpr);
-            } else {
-              g.moveTo(x(m.t), H - 4 * dpr);
-              g.lineTo(x(m.t), H - 16 * dpr);
-            }
-            g.stroke();
-          }
-        }
-      }
+      chartRef.current?.push(now, hpOut.left, hpOut.right);
 
       // throttled numeric readout (~8 Hz)
       if (now - lastReadoutRef.current > 125) {
@@ -296,7 +217,7 @@ export default function NodLab() {
           bottom. Slow posture drift stays flat — the baseline auto-follows it.
         </p>
         <div className="nod-chart-wrap">
-          <canvas ref={canvasRef} className="nod-chart" />
+          <NodChart ref={chartRef} threshold={threshold} />
         </div>
         <div className="nod-readout" aria-hidden="true">
           <div className="l">L {readout.left}</div>

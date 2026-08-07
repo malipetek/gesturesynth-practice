@@ -6,7 +6,8 @@ import type { TrackingStatus } from '../lib/useHandTracking';
 import { degreeRootHz, qualityLabel, voicingNotes } from '../lib/match';
 import { pitchFromHandY, volumeFromWrist } from '../lib/gesture';
 import { audioContextFromTone, GSVoice } from '../lib/gsVoice';
-import { NodDetector } from '../lib/nod';
+import { NodDetector, NOD_THRESHOLD } from '../lib/nod';
+import NodChart, { type NodChartHandle } from './NodChart';
 import { Tracker, type TrackerBridge } from './Tracker';
 import './Player.css';
 
@@ -103,8 +104,9 @@ export default function FreeformPlayer({
     };
   }, []);
 
-  // Nod fire indicator — a brief flash so you can SEE the articulation
-  // register even before you hear it (detection vs. sound debugging).
+  // Nod fire indicator + live signal strip — you can SEE the flick channel
+  // while playing (same visualizer as /nod-lab).
+  const nodChartRef = useRef<NodChartHandle | null>(null);
   const [nodFlash, setNodFlash] = useState<'play' | 'choke' | null>(null);
   const nodFlashTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const flashNod = useCallback((kind: 'play' | 'choke') => {
@@ -135,11 +137,14 @@ export default function FreeformPlayer({
           if (ev === 'forward') {
             voice.articulate();
             flashNod('play');
+            nodChartRef.current?.mark(now, hand, 'fwd');
           } else if (ev === 'backward') {
             voice.choke();
             flashNod('choke');
+            nodChartRef.current?.mark(now, hand, 'back');
           }
         }
+        nodChartRef.current?.push(now, nods.left.hp, nods.right.hp);
         const frame = frameBridge.current.frameRef?.current ?? null;
         const deg = frame?.left?.degree ?? null;
         const world = frame?.left?.world ?? null;
@@ -277,6 +282,13 @@ export default function FreeformPlayer({
                 {s.note}
               </span>
             ))}
+          </div>
+          <div
+            className="free-nod glass"
+            title="Nod articulation signal: flick forward (toward camera) = re-play · flick backward = silence"
+          >
+            <span className="free-nod-label">nod</span>
+            <NodChart ref={nodChartRef} threshold={NOD_THRESHOLD} className="nod-chart compact" />
           </div>
         </>
       ) : (
