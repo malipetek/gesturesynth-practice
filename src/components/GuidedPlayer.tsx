@@ -146,8 +146,6 @@ export default function GuidedPlayer({
   const thumbSinceRef = useRef<number | null>(null);
   const thumbPrevRef = useRef<{ x: number; y: number }[] | null>(null);
   const nodRef = useRef({ left: new NodDetector(), right: new NodDetector() });
-  /** Rising-edge tracker for full matches (fresh match re-opens the sound). */
-  const prevMatchedRef = useRef(false);
   const nodLastTRef = useRef<number | null>(null);
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stepStartedAtRef = useRef<number>(performance.now());
@@ -165,7 +163,11 @@ export default function GuidedPlayer({
         // audio stays muted; practice continues silently
       }
       if (mounted) {
-        voiceRef.current = new GSVoice(audioContextFromTone(() => Tone.getContext()));
+        const voice = new GSVoice(audioContextFromTone(() => Tone.getContext()));
+        // Momentary nod articulation: choked by default; chord changes never
+        // un-choke — sound lives only while matched AND pushed forward.
+        voice.setGateMode(true);
+        voiceRef.current = voice;
       }
     })();
     return () => {
@@ -376,8 +378,8 @@ export default function GuidedPlayer({
         else if (!anyPushed && voice.isSounding) voice.choke();
       }
       if (rep && rep.score >= 1 && cur) {
-        if (!prevMatchedRef.current) voice.articulate(); // fresh match = sound
-        prevMatchedRef.current = true;
+        // playNotes never un-chokes (gate latch on): sound only while the
+        // momentary nod above says pushed — choked by default otherwise.
         voice.playNotes(targetNotes(cur.ev.target, cur.ev.chordName));
         voice.setVolume(frame?.right?.volume ?? 0.5);
         if (holdSinceRef.current === null) {
@@ -389,7 +391,6 @@ export default function GuidedPlayer({
           scheduleAdvance();
         }
       } else {
-        prevMatchedRef.current = false;
         voice.setVolume(0);
         holdSinceRef.current = null;
       }

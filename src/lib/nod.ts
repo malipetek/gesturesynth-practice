@@ -84,10 +84,12 @@ export class NodDetector {
    * high rate, but it never passed through the settled zone first.
    */
   private settled = true;
+  private prevSig: number | null = null;
   /**
    * Momentary push state (gate mode): true while the hand is pushed
-   * forward past the threshold, released when it returns near zero.
-   * Hysteresis band prevents flicker. Sign convention: forward = negative.
+   * forward past the threshold. Released by coming back near zero OR by
+   * any clear return motion — no deliberate "back nod" needed.
+   * Sign convention: forward = negative.
    */
   pushed = false;
   /**
@@ -170,11 +172,20 @@ export class NodDetector {
     // Settle tracking: has the signal been near zero since the last event?
     if (Math.abs(sig) <= this.threshold * 0.5) this.settled = true;
 
-    // Momentary push state with hysteresis: pushed past −threshold,
-    // released back inside −0.4·threshold. This is the gate-mode contract:
-    // push forward = play, return to neutral = stop.
-    if (!this.pushed && sig < -this.threshold) this.pushed = true;
-    else if (this.pushed && sig > -this.threshold * 0.4) this.pushed = false;
+    // Momentary push state. Enter: sig < −threshold. Exit: either the hand
+    // is back near rest (sig > −0.5·threshold) OR it is clearly moving back
+    // (negative-going rate, i.e. sig rising toward zero) — so relaxing the
+    // push releases the note without any deliberate "back nod".
+    const sigRate = this.prevSig !== null && dtS > 0 ? (sig - this.prevSig) / dtS : 0;
+    this.prevSig = sig;
+    if (!this.pushed && sig < -this.threshold) {
+      this.pushed = true;
+    } else if (
+      this.pushed &&
+      (sig > -this.threshold * 0.5 || sigRate > this.threshold * 15)
+    ) {
+      this.pushed = false;
+    }
 
     // Disarmed: track the extreme, re-arm once the signal has returned at
     // least halfway from it (and the refractory has passed).

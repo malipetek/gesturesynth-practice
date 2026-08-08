@@ -177,31 +177,30 @@ export class GSVoice {
   }
 
   /**
-   * Nod articulation (our addition — no upstream equivalent). Forward flick:
-   * re-attack the held chord — cut in 10 ms, hold a ~70 ms gap, restore in
-   * 45 ms. The gap is what the ear registers as a new note; anything under
-   * ~30 ms total reads as a click, not a re-trigger (found in real-hands
-   * testing). Also releases the choke latch.
+   * Nod articulation (our addition — no upstream equivalent). Momentary
+   * semantics: articulate() is only ever called from the silent (choked)
+   * state, so it's a smooth swell from zero — no hard attack transient,
+   * no re-attack gap. 30 ms time constant ≈ 90 ms to ~95% volume.
    */
   articulate(): void {
     this.choked = false;
     const g = this.liveGain.gain;
     const now = this.ctx.currentTime;
     g.cancelScheduledValues(now);
-    g.setValueAtTime(g.value, now);
-    g.linearRampToValueAtTime(0, now + 0.01);
-    g.setValueAtTime(0, now + 0.08);
-    g.linearRampToValueAtTime(this.liveVol, now + 0.125);
+    g.setTargetAtTime(this.liveVol, now, 0.03);
   }
 
-  /** Backward flick: cut the held chord NOW and keep it cut (latched). */
+  /**
+   * Release: the level glides to zero (~35 ms time constant ≈ 120 ms
+   * fade-out) and stays there — the oscillators keep running at gain 0,
+   * so nothing ever "stops" with a click; the sound just breathes out.
+   */
   choke(): void {
     this.choked = true;
     const g = this.liveGain.gain;
     const now = this.ctx.currentTime;
     g.cancelScheduledValues(now);
-    g.setValueAtTime(g.value, now);
-    g.linearRampToValueAtTime(0, now + 0.015);
+    g.setTargetAtTime(0, now, 0.04);
   }
 
   /**
