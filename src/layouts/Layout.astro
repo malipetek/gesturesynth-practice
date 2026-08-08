@@ -64,6 +64,19 @@ const schema = [
 
 		<title>{title}</title>
 
+		<script
+			is:inline
+			async
+			src="https://www.googletagmanager.com/gtag/js?id=G-TM1GWWXSCM"></script>
+		<script is:inline>
+			window.dataLayer = window.dataLayer || [];
+			function gtag() {
+				dataLayer.push(arguments);
+			}
+			gtag("js", new Date());
+			gtag("config", "G-TM1GWWXSCM");
+		</script>
+
 		<meta property="og:type" content={ogType} />
 		<meta property="og:site_name" content="Gesture Synth School" />
 		<meta property="og:title" content={title} />
