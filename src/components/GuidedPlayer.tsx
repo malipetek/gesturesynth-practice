@@ -146,6 +146,8 @@ export default function GuidedPlayer({
   const thumbSinceRef = useRef<number | null>(null);
   const thumbPrevRef = useRef<{ x: number; y: number }[] | null>(null);
   const nodRef = useRef({ left: new NodDetector(), right: new NodDetector() });
+  /** Rising-edge tracker for full matches (fresh match re-opens the sound). */
+  const prevMatchedRef = useRef(false);
   const nodLastTRef = useRef<number | null>(null);
   const advanceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const stepStartedAtRef = useRef<number>(performance.now());
@@ -358,19 +360,24 @@ export default function GuidedPlayer({
 
       if (!voice) return;
       if (frame?.right) voice.updateFilterSweep(frame.right.tone);
-      // Nod articulation (ours): forward flick re-attacks, backward chokes.
+      // Momentary nod articulation (ours): sound lives only while a hand is
+      // pushed forward — push = play, return to rest = stop. A fresh full
+      // match always re-opens the sound (rising edge below).
       {
         const now = performance.now();
         const dt = Math.min(0.1, (now - (nodLastTRef.current ?? now)) / 1000);
         nodLastTRef.current = now;
         const lmk = frameBridge.current.landmarksRef?.current;
         for (const hand of ['left', 'right'] as const) {
-          const ev = nodRef.current[hand].update(lmk?.[hand] ?? null, now, dt);
-          if (ev === 'forward') voice.articulate();
-          else if (ev === 'backward') voice.choke();
+          nodRef.current[hand].update(lmk?.[hand] ?? null, now, dt);
         }
+        const anyPushed = nodRef.current.left.pushed || nodRef.current.right.pushed;
+        if (anyPushed && !voice.isSounding) voice.articulate();
+        else if (!anyPushed && voice.isSounding) voice.choke();
       }
       if (rep && rep.score >= 1 && cur) {
+        if (!prevMatchedRef.current) voice.articulate(); // fresh match = sound
+        prevMatchedRef.current = true;
         voice.playNotes(targetNotes(cur.ev.target, cur.ev.chordName));
         voice.setVolume(frame?.right?.volume ?? 0.5);
         if (holdSinceRef.current === null) {
@@ -382,6 +389,7 @@ export default function GuidedPlayer({
           scheduleAdvance();
         }
       } else {
+        prevMatchedRef.current = false;
         voice.setVolume(0);
         holdSinceRef.current = null;
       }

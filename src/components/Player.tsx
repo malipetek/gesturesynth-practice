@@ -391,14 +391,16 @@ export default function Player({ song }: { song: Song }) {
       lastT = now;
       const voice = voiceRef.current;
       if (voice) {
-        // Nod articulation (ours): forward flick re-attacks, backward chokes.
+        // Momentary nod articulation (ours): sound lives only while a hand
+        // is pushed forward — push = play, return to rest = stop.
         if (voiceModeRef.current !== 'auto') {
           const lmk = frameBridge.current.landmarksRef?.current;
           for (const hand of ['left', 'right'] as const) {
-            const ev = nods[hand].update(lmk?.[hand] ?? null, now, dt);
-            if (ev === 'forward') voice.articulate();
-            else if (ev === 'backward') voice.choke();
+            nods[hand].update(lmk?.[hand] ?? null, now, dt);
           }
+          const anyPushed = nods.left.pushed || nods.right.pushed;
+          if (anyPushed && !voice.isSounding) voice.articulate();
+          else if (!anyPushed && voice.isSounding) voice.choke();
         }
         // Classify straight from the raw smoothed landmarks (fresh every
         // detection frame) — not the debounced published frame, whose
@@ -455,6 +457,10 @@ export default function Player({ song }: { song: Song }) {
         const voice = (voiceRef.current ??= new GSVoice(audioContextFromTone(() => Tone.getContext())));
         voice.setMetronome(settingsRef.current.metroSound, settingsRef.current.metroVolume);
         voice.setTone(settingsRef.current.tone);
+        // Momentary nod articulation: chord changes never un-choke the live
+        // voice — only a forward push opens it. (Scheduled stabs/pad are
+        // unaffected; they tap a separate path.)
+        voice.setGateMode(true);
         dispatch({ type: 'START' });
         schedulePlayback(song, listenOnly, voice, dispatch, frameBridge, activeIndexAtBeat, () =>
           voiceModeRef.current !== 'hands',

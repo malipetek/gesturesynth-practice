@@ -95,7 +95,11 @@ export default function FreeformPlayer({
         // audio stays muted
       }
       if (mounted) {
-        voiceRef.current = new GSVoice(audioContextFromTone(() => Tone.getContext()));
+        const voice = new GSVoice(audioContextFromTone(() => Tone.getContext()));
+        // Momentary nod articulation is always on in freeform: chord changes
+        // never un-choke; only a forward push opens the sound.
+        voice.setGateMode(true);
+        voiceRef.current = voice;
       }
     })();
     return () => {
@@ -116,27 +120,10 @@ export default function FreeformPlayer({
     nodFlashTimeout.current = setTimeout(() => setNodFlash(null), 220);
   }, []);
 
-  // Nod-gate mode (momentary): silent by default; sound only while a hand
-  // is pushed forward — release = silence. Piano-key semantics.
-  const [gateMode, setGateMode] = useState(false);
+  // Momentary nod articulation (the only semantics now): sound lives only
+  // while a hand is pushed forward — push = play, return to rest = stop.
+  // `gateOpen` drives the HUD chip; the voice's choked latch is the truth.
   const [gateOpen, setGateOpen] = useState(false);
-  const gateModeRef = useRef(false);
-  const gateOpenRef = useRef(false);
-  const toggleGateMode = useCallback(() => {
-    setGateMode((prev) => {
-      const next = !prev;
-      gateModeRef.current = next;
-      const voice = voiceRef.current;
-      if (voice) {
-        voice.setGateMode(next);
-        if (next) voice.choke(); // start silent
-        else voice.articulate(); // leaving gate mode: restore sound
-      }
-      gateOpenRef.current = false;
-      setGateOpen(false);
-      return next;
-    });
-  }, []);
 
   // Live instrument loop — mirrors their App.tsx frame loop.
   useEffect(() => {
@@ -156,41 +143,24 @@ export default function FreeformPlayer({
       if (!voice) return;
 
       if (modeRef.current === 'gesture') {
-        // Nod articulation (ours — no upstream equivalent). Two semantics:
-        //  - gate OFF (default): forward flick = re-attack, backward = choke
-        //  - gate ON (momentary): sound only while pushed forward — the
-        //    natural "push to play, relax to stop" piano-key feel.
+        // Momentary nod articulation (ours — no upstream equivalent):
+        // sound lives only while a hand is pushed forward. Push = play,
+        // return to neutral = stop. No backward gesture.
         const lmk = frameBridge.current.landmarksRef?.current;
-        const gated = gateModeRef.current;
         for (const hand of ['left', 'right'] as const) {
           const ev = nods[hand].update(lmk?.[hand] ?? null, now, dt);
-          if (ev === 'forward') {
-            nodChartRef.current?.mark(now, hand, 'fwd');
-            if (!gated) {
-              voice.articulate();
-              flashNod('play');
-            }
-          } else if (ev === 'backward') {
-            nodChartRef.current?.mark(now, hand, 'back');
-            if (!gated) {
-              voice.choke();
-              flashNod('choke');
-            }
-          }
+          if (ev === 'forward') nodChartRef.current?.mark(now, hand, 'fwd');
+          else if (ev === 'backward') nodChartRef.current?.mark(now, hand, 'back');
         }
-        if (gated) {
-          const anyPushed = nods.left.pushed || nods.right.pushed;
-          if (anyPushed && !gateOpenRef.current) {
-            gateOpenRef.current = true;
-            setGateOpen(true);
-            voice.articulate();
-            flashNod('play');
-          } else if (!anyPushed && gateOpenRef.current) {
-            gateOpenRef.current = false;
-            setGateOpen(false);
-            voice.choke();
-            flashNod('choke');
-          }
+        const anyPushed = nods.left.pushed || nods.right.pushed;
+        if (anyPushed && !voice.isSounding) {
+          voice.articulate();
+          flashNod('play');
+          setGateOpen(true);
+        } else if (!anyPushed && voice.isSounding) {
+          voice.choke();
+          flashNod('choke');
+          setGateOpen(false);
         }
         nodChartRef.current?.push(now, nods.left.hp, nods.right.hp);
         // Classify straight from the raw smoothed landmarks (updated every
@@ -347,14 +317,12 @@ export default function FreeformPlayer({
           >
             <span className="free-nod-label">nod</span>
             <NodChart ref={nodChartRef} threshold={NOD_THRESHOLD} className="nod-chart compact" />
-            <button
-              type="button"
-              className={`nod-gate-toggle${gateMode ? ' on' : ''}`}
-              onClick={toggleGateMode}
-              title="Gate mode: chord stays SILENT until you flick forward; flick backward silences it again"
+            <span
+              className={`nod-gate-toggle${gateOpen ? ' on' : ''}`}
+              title="Momentary nod articulation: push a hand forward = play, return to rest = stop"
             >
-              {gateMode ? (gateOpen ? '▶ gate open' : '◼ gated') : 'gate off'}
-            </button>
+              {gateOpen ? '▶ sounding' : '◼ push to play'}
+            </span>
           </div>
         </>
       ) : (
