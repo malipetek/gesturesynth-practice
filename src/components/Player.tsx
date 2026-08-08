@@ -9,6 +9,7 @@ import {
 } from '../lib/gsVoice';
 import { NodDetector } from '../lib/nod';
 import { ChordGate } from '../lib/chordGate';
+import { classifyLeft, classifyRight } from '../lib/gesture';
 import {
   compareFrame,
   degreeRootHz,
@@ -399,25 +400,31 @@ export default function Player({ song }: { song: Song }) {
             else if (ev === 'backward') voice.choke();
           }
         }
-        const frame = frameBridge.current.frameRef?.current ?? null;
-        if (frame?.right) voice.updateFilterSweep(frame.right.tone);
+        // Classify straight from the raw smoothed landmarks (fresh every
+        // detection frame) — not the debounced published frame, whose
+        // stability/hold delays exist for scoring. The ChordGate is the
+        // audio-path stabilizer now.
+        const lmk2 = frameBridge.current.landmarksRef?.current;
+        const leftH = lmk2?.left ? classifyLeft(lmk2.left) : null;
+        const rightH = lmk2?.right ? classifyRight(lmk2.right) : null;
+        if (rightH) voice.updateFilterSweep(rightH.tone);
         if (voiceModeRef.current === 'auto') {
           voice.setVolume(0);
         } else {
           // Free play: voice whatever the hands form, right or wrong.
           // Scoring is unaffected.
-          const deg = frame?.left?.degree ?? null;
-          const world = frame?.left?.world ?? null;
-          const qual = frame?.right?.quality ?? null;
+          const deg = leftH?.degree ?? null;
+          const world = leftH?.world ?? null;
+          const qual = rightH?.quality ?? null;
           const root = deg !== null ? degreeRootHz(song.key, deg) : null;
-          const freqs = root && world && qual ? voicingNotes(root, world, qual, frame?.right?.octave ?? 0) : null;
+          const freqs = root && world && qual ? voicingNotes(root, world, qual, rightH?.octave ?? 0) : null;
           const key = freqs ? freqs.map((f) => f.toFixed(1)).join(',') : null;
           const committed = gate.update(key, freqs);
           if (committed.changed && committed.payload) {
             voice.playNotes(committed.payload);
           }
           if (gate.sounding) {
-            voice.setVolume(frame?.right?.volume ?? 0.5);
+            voice.setVolume(rightH?.volume ?? 0.5);
           } else {
             voice.setVolume(0);
           }

@@ -78,9 +78,23 @@ export class NodDetector {
   private armed = true;
   private peak = 0; // signed extreme hp that caused the current disarm
   /**
+   * Settle tracking: a backward event may only fire after the signal has
+   * been near zero since the last event. This kills the classic false
+   * choke — the fast RETURN swing of a forward nod crosses +threshold with
+   * high rate, but it never passed through the settled zone first.
+   */
+  private settled = true;
+  /**
+   * Momentary push state (gate mode): true while the hand is pushed
+   * forward past the threshold, released when it returns near zero.
+   * Hysteresis band prevents flicker. Sign convention: forward = negative.
+   */
+  pushed = false;
+  /**
    * The stronger of the two flick channels from the latest update,
    * normalized into depth-threshold units (so ±threshold is the fire line
-   * on the strip chart). Null before seed.
+   * on the strip chart). Forward = negative, backward = positive.
+   * Null before seed.
    */
   hp: number | null = null;
 
@@ -109,6 +123,7 @@ export class NodDetector {
       this.fast = null;
       this.sFast = null;
       this.hp = null;
+      this.pushed = false;
       return null;
     }
     // Channel A: fingertip depth relative to wrist.
@@ -131,7 +146,11 @@ export class NodDetector {
       return null;
     }
     const aF = 1 - Math.exp(-dtS / FAST_TAU_S);
-    const aS = 1 - Math.exp(-dtS / SLOW_TAU_S);
+    // While pushed (gate mode holds a note), the baseline adapts ~5x slower —
+    // otherwise a held push decays back to zero in ~2s and the note would
+    // auto-release. At rest, the normal 1.5s recalibration applies.
+    const slowTau = this.pushed ? 8.0 : SLOW_TAU_S;
+    const aS = 1 - Math.exp(-dtS / slowTau);
     this.fast += (raw - this.fast) * aF;
     this.slow += (raw - this.slow) * aS;
     this.sFast += (rawScale - this.sFast) * aF;
@@ -143,13 +162,23 @@ export class NodDetector {
     this.prevHp = hp;
     this.prevSHp = sHp;
     // Expose the stronger channel, normalized so ±threshold is the fire line.
-    const sNorm = (sHp / NOD_SCALE_THRESHOLD) * this.threshold;
+    // Forward = negative on both channels (scale is negated to match depth).
+    const sNorm = (-sHp / NOD_SCALE_THRESHOLD) * this.threshold;
     this.hp = Math.abs(sNorm) > Math.abs(hp) ? sNorm : hp;
+    const sig = this.hp;
+
+    // Settle tracking: has the signal been near zero since the last event?
+    if (Math.abs(sig) <= this.threshold * 0.5) this.settled = true;
+
+    // Momentary push state with hysteresis: pushed past −threshold,
+    // released back inside −0.4·threshold. This is the gate-mode contract:
+    // push forward = play, return to neutral = stop.
+    if (!this.pushed && sig < -this.threshold) this.pushed = true;
+    else if (this.pushed && sig > -this.threshold * 0.4) this.pushed = false;
 
     // Disarmed: track the extreme, re-arm once the signal has returned at
     // least halfway from it (and the refractory has passed).
     if (!this.armed) {
-      const sig = this.hp;
       this.peak = this.peak < 0 ? Math.min(this.peak, sig) : Math.max(this.peak, sig);
       const halfway = this.peak * 0.5;
       const level =
@@ -160,21 +189,25 @@ export class NodDetector {
     }
 
     if (nowMs - this.lastEventAt < this.refractoryMs) return null;
-    // Forward = toward camera: depth channel swings negative, scale channel positive.
+    // Forward = toward camera: negative on both channels.
     const fwdDepth = hp < -this.threshold && rate <= -NOD_RATE_MIN;
     const fwdScale = sHp > NOD_SCALE_THRESHOLD && sRate >= NOD_SCALE_RATE_MIN;
     if (fwdDepth || fwdScale) {
       this.lastEventAt = nowMs;
       this.armed = false;
-      this.peak = fwdDepth ? hp : -sNorm; // peak in the exposed sign convention
+      this.settled = false;
+      this.peak = fwdDepth ? hp : sNorm;
       return 'forward';
     }
+    // Backward requires the signal to have SETTLED near zero since the last
+    // event — otherwise the return swing of a forward nod would "choke".
     const backDepth = hp > this.threshold && rate >= NOD_RATE_MIN;
     const backScale = sHp < -NOD_SCALE_THRESHOLD && sRate <= -NOD_SCALE_RATE_MIN;
-    if (backDepth || backScale) {
+    if ((backDepth || backScale) && this.settled) {
       this.lastEventAt = nowMs;
       this.armed = false;
-      this.peak = backDepth ? hp : -sNorm;
+      this.settled = false;
+      this.peak = backDepth ? hp : sNorm;
       return 'backward';
     }
     return null;

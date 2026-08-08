@@ -30,7 +30,7 @@ const events = await page.evaluate(async () => {
       return { x: 0.5 + Math.cos(a) * s, y: 0.5 + Math.sin(a) * s, z: 0 };
     });
 
-  // Part 1: depth channel (original four checks)
+  // Part 1: depth channel (original four checks + pushed-state semantics)
   const d = new NodDetector();
   const out = [];
   let t = 1000;
@@ -43,8 +43,10 @@ const events = await page.evaluate(async () => {
   };
   const stepZ = (z, frames) => step(mk(z), frames);
   stepZ(0, 120);          // 2s rest — seed + settle
-  stepZ(-0.06, 4);        // 1. forward flick
-  stepZ(0, 40);           //    return swing + settle — no choke
+  stepZ(-0.06, 4);        // 1. forward flick → pushed must be TRUE now
+  const pushedDuringFlick = d.pushed;
+  stepZ(0, 40);           //    return swing + settle — no choke, pushed FALSE
+  const pushedAfterReturn = d.pushed;
   stepZ(0.06, 4);         // 2. deliberate backward flick
   stepZ(0, 60);           //    settle
   for (let f = 0; f < 180; f++) stepZ(-0.1 * (f / 180), 1); // 3. slow drift
@@ -86,7 +88,7 @@ const events = await page.evaluate(async () => {
     step3(mk(0), 6);     // 100 ms return — 150 ms nod period
   }
   step3(mk(0), 60); // settle
-  return { out, out2, out3 };
+  return { out, out2, out3, pushedDuringFlick, pushedAfterReturn };
 });
 await browser.close();
 console.log(JSON.stringify(events));
@@ -97,9 +99,10 @@ const ok1 =
   events.out[2].ev === 'forward';
 const ok2 = events.out2.length === 1 && events.out2[0].ev === 'forward';
 const ok3 = events.out3.length === 4 && events.out3.every((e) => e.ev === 'forward');
+const ok4 = events.pushedDuringFlick === true && events.pushedAfterReturn === false;
 console.log(
-  ok1 && ok2 && ok3
+  ok1 && ok2 && ok3 && ok4
     ? 'NODTEST PASS'
-    : `NODTEST FAIL (depth:${ok1} scale:${ok2} rapid:${ok3} got:${JSON.stringify(events.out3)})`,
+    : `NODTEST FAIL (depth:${ok1} scale:${ok2} rapid:${ok3} pushed:${ok4} got:${JSON.stringify(events.out3)})`,
 );
-process.exit(ok1 && ok2 && ok3 ? 0 : 1);
+process.exit(ok1 && ok2 && ok3 && ok4 ? 0 : 1);

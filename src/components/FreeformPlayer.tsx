@@ -4,7 +4,7 @@ import type { GestureTarget, MatchReport } from '../lib/types';
 import { DEGREE_LABELS } from '../lib/types';
 import type { TrackingStatus } from '../lib/useHandTracking';
 import { degreeRootHz, qualityLabel, voicingNotes } from '../lib/match';
-import { pitchFromHandY, volumeFromWrist } from '../lib/gesture';
+import { pitchFromHandY, volumeFromWrist, classifyLeft, classifyRight } from '../lib/gesture';
 import { audioContextFromTone, GSVoice } from '../lib/gsVoice';
 import { NodDetector, NOD_THRESHOLD } from '../lib/nod';
 import { ChordGate } from '../lib/chordGate';
@@ -116,19 +116,24 @@ export default function FreeformPlayer({
     nodFlashTimeout.current = setTimeout(() => setNodFlash(null), 220);
   }, []);
 
-  // Nod-gate mode: silent by default; a forward nod opens the gate (plays),
-  // a backward nod closes it (silence) — across chord changes too.
+  // Nod-gate mode (momentary): silent by default; sound only while a hand
+  // is pushed forward — release = silence. Piano-key semantics.
   const [gateMode, setGateMode] = useState(false);
   const [gateOpen, setGateOpen] = useState(false);
+  const gateModeRef = useRef(false);
+  const gateOpenRef = useRef(false);
   const toggleGateMode = useCallback(() => {
     setGateMode((prev) => {
       const next = !prev;
+      gateModeRef.current = next;
       const voice = voiceRef.current;
       if (voice) {
         voice.setGateMode(next);
         if (next) voice.choke(); // start silent
+        else voice.articulate(); // leaving gate mode: restore sound
       }
-      if (next) setGateOpen(false);
+      gateOpenRef.current = false;
+      setGateOpen(false);
       return next;
     });
   }, []);
@@ -151,32 +156,56 @@ export default function FreeformPlayer({
       if (!voice) return;
 
       if (modeRef.current === 'gesture') {
-        // Nod articulation (ours — no upstream equivalent): forward flick
-        // re-attacks the held chord, backward flick chokes it.
+        // Nod articulation (ours — no upstream equivalent). Two semantics:
+        //  - gate OFF (default): forward flick = re-attack, backward = choke
+        //  - gate ON (momentary): sound only while pushed forward — the
+        //    natural "push to play, relax to stop" piano-key feel.
         const lmk = frameBridge.current.landmarksRef?.current;
+        const gated = gateModeRef.current;
         for (const hand of ['left', 'right'] as const) {
           const ev = nods[hand].update(lmk?.[hand] ?? null, now, dt);
           if (ev === 'forward') {
+            nodChartRef.current?.mark(now, hand, 'fwd');
+            if (!gated) {
+              voice.articulate();
+              flashNod('play');
+            }
+          } else if (ev === 'backward') {
+            nodChartRef.current?.mark(now, hand, 'back');
+            if (!gated) {
+              voice.choke();
+              flashNod('choke');
+            }
+          }
+        }
+        if (gated) {
+          const anyPushed = nods.left.pushed || nods.right.pushed;
+          if (anyPushed && !gateOpenRef.current) {
+            gateOpenRef.current = true;
+            setGateOpen(true);
             voice.articulate();
             flashNod('play');
-            setGateOpen(true);
-            nodChartRef.current?.mark(now, hand, 'fwd');
-          } else if (ev === 'backward') {
+          } else if (!anyPushed && gateOpenRef.current) {
+            gateOpenRef.current = false;
+            setGateOpen(false);
             voice.choke();
             flashNod('choke');
-            setGateOpen(false);
-            nodChartRef.current?.mark(now, hand, 'back');
           }
         }
         nodChartRef.current?.push(now, nods.left.hp, nods.right.hp);
-        const frame = frameBridge.current.frameRef?.current ?? null;
-        const deg = frame?.left?.degree ?? null;
-        const world = frame?.left?.world ?? null;
-        const qual = frame?.right?.quality ?? null;
-        const oct = frame?.right?.octave ?? 0;
-        const vol = frame?.right?.volume ?? 0;
-        const tone = frame?.right?.tone ?? 0;
-        if (frame?.right) voice.updateFilterSweep(tone);
+        // Classify straight from the raw smoothed landmarks (updated every
+        // detection frame) — NOT the debounced published frame, whose
+        // 50ms-stability/100ms-hold exists for scoring, not for audio.
+        // The ChordGate below is the audio-path stabilizer now.
+        const left = lmk?.left ? classifyLeft(lmk.left) : null;
+        const right = lmk?.right ? classifyRight(lmk.right) : null;
+        const deg = left?.degree ?? null;
+        const world = left?.world ?? null;
+        const qual = right?.quality ?? null;
+        const oct = right?.octave ?? 0;
+        const vol = right?.volume ?? 0;
+        const tone = right?.tone ?? 0;
+        if (right) voice.updateFilterSweep(tone);
         const root = deg !== null ? degreeRootHz(songKey, deg) : null;
         const freqs = root && world && qual ? voicingNotes(root, world, qual, oct) : null;
         const gateKey = freqs ? freqs.map((f) => f.toFixed(1)).join(',') : null;
