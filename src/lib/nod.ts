@@ -49,11 +49,12 @@
 export type NodEvent = 'forward' | 'backward';
 
 export const NOD_THRESHOLD = 0.01;
-export const NOD_REFRACTORY_MS = 180;
+// 130 ms caps articulation at ~7 nods/sec — 16th notes at ≈160 BPM.
+export const NOD_REFRACTORY_MS = 130;
 export const NOD_RATE_MIN = 0.25; // depth channel |dhp/dt| in z-units/sec
 export const NOD_SCALE_THRESHOLD = 0.03; // log palm-size units (≈3% fast change)
 export const NOD_SCALE_RATE_MIN = 0.3; // scale channel |dhp/dt| in log-units/sec
-export const NOD_FAST_TAU_S = 0.08;
+export const NOD_FAST_TAU_S = 0.06; // snappier tracking for fast songs
 export const NOD_SLOW_TAU_S = 1.5;
 const FAST_TAU_S = NOD_FAST_TAU_S;
 const SLOW_TAU_S = NOD_SLOW_TAU_S;

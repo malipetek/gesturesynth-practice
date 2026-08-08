@@ -7,6 +7,8 @@
 //  5. SCALE channel: a fast palm-size jump (hand pushed toward camera) fires
 //     'forward' even with zero depth-channel motion
 //  6. slow palm-size drift (leaning in gradually) fires NOTHING
+//  7. RAPID TRAIN: 4 forward flicks at 150 ms spacing (16ths @ ~165 BPM)
+//     each fire exactly once — no dropped nods, no double-fires
 import puppeteer from 'puppeteer-core';
 const browser = await puppeteer.launch({
   executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -66,7 +68,25 @@ const events = await page.evaluate(async () => {
   step2(mkPalm(0.10), 60);        //    return + settle — no choke
   for (let f = 0; f < 180; f++) step2(mkPalm(0.10 * (1 + 0.3 * (f / 180))), 1); // 6. slow lean-in
   step2(mkPalm(0.13), 60);        //    hold bigger size — nothing
-  return { out, out2 };
+
+  // Part 3: rapid nod train — 4 flicks, 150 ms apart (9 frames per cycle)
+  const d3 = new NodDetector();
+  const out3 = [];
+  let t3 = 1000;
+  const step3 = (lm, frames) => {
+    for (let i = 0; i < frames; i++) {
+      t3 += 1000 / 60;
+      const ev = d3.update(lm, t3, 1 / 60);
+      if (ev) out3.push({ t: Math.round(t3), ev });
+    }
+  };
+  step3(mk(0), 90); // settle
+  for (let n = 0; n < 4; n++) {
+    step3(mk(-0.06), 3); // 50 ms flick out
+    step3(mk(0), 6);     // 100 ms return — 150 ms nod period
+  }
+  step3(mk(0), 60); // settle
+  return { out, out2, out3 };
 });
 await browser.close();
 console.log(JSON.stringify(events));
@@ -76,5 +96,10 @@ const ok1 =
   events.out[1].ev === 'backward' &&
   events.out[2].ev === 'forward';
 const ok2 = events.out2.length === 1 && events.out2[0].ev === 'forward';
-console.log(ok1 && ok2 ? 'NODTEST PASS' : `NODTEST FAIL (depth:${ok1} scale:${ok2})`);
-process.exit(ok1 && ok2 ? 0 : 1);
+const ok3 = events.out3.length === 4 && events.out3.every((e) => e.ev === 'forward');
+console.log(
+  ok1 && ok2 && ok3
+    ? 'NODTEST PASS'
+    : `NODTEST FAIL (depth:${ok1} scale:${ok2} rapid:${ok3} got:${JSON.stringify(events.out3)})`,
+);
+process.exit(ok1 && ok2 && ok3 ? 0 : 1);

@@ -7,6 +7,7 @@ import { degreeRootHz, qualityLabel, voicingNotes } from '../lib/match';
 import { pitchFromHandY, volumeFromWrist } from '../lib/gesture';
 import { audioContextFromTone, GSVoice } from '../lib/gsVoice';
 import { NodDetector, NOD_THRESHOLD } from '../lib/nod';
+import { ChordGate } from '../lib/chordGate';
 import NodChart, { type NodChartHandle } from './NodChart';
 import { Tracker, type TrackerBridge } from './Tracker';
 import './Player.css';
@@ -137,6 +138,10 @@ export default function FreeformPlayer({
     let raf = 0;
     let lastT = performance.now();
     const nods = { left: new NodDetector(), right: new NodDetector() };
+    // Deliberate-latency trade: audio follows only COMMITTED shapes (2
+    // stable frames) — 1-frame misreads during fast changes never sound.
+    // The HUD below still renders the raw frame: instant visual feedback.
+    const gate = new ChordGate<number[]>(2);
     const loop = () => {
       raf = requestAnimationFrame(loop);
       const now = performance.now();
@@ -173,8 +178,13 @@ export default function FreeformPlayer({
         const tone = frame?.right?.tone ?? 0;
         if (frame?.right) voice.updateFilterSweep(tone);
         const root = deg !== null ? degreeRootHz(songKey, deg) : null;
-        if (root && world && qual) {
-          voice.playNotes(voicingNotes(root, world, qual, oct));
+        const freqs = root && world && qual ? voicingNotes(root, world, qual, oct) : null;
+        const gateKey = freqs ? freqs.map((f) => f.toFixed(1)).join(',') : null;
+        const committed = gate.update(gateKey, freqs);
+        if (committed.changed && committed.payload) {
+          voice.playNotes(committed.payload);
+        }
+        if (gate.sounding) {
           voice.setVolume(vol);
         } else {
           voice.setVolume(0);

@@ -40,6 +40,11 @@ const FILTER_SMOOTH_S = 0.04;
 const VOLUME_RAMP_S = 0.03; // their updateVolume time constant
 const CLICK_LEVEL = 0.25;
 const STAB_ATTACK_S = 0.006;
+// Deliberate-latency trade: chord swaps are scheduled this far in the
+// future and crossfaded over this window — clicks and torn-frame blips
+// become impossible, at the cost of ~60 ms shape→sound latency.
+const CHORD_SWAP_LOOKAHEAD_S = 0.06;
+const CHORD_SWAP_FADE_S = 0.035;
 
 export type MetronomeSound = 'click' | 'wood' | 'beep' | 'hihat';
 
@@ -70,6 +75,8 @@ export class GSVoice {
   private readonly sweepFilter: BiquadFilterNode;
   private readonly liveGain: GainNode;
   private oscs: OscillatorNode[] = [];
+  /** Current chord generation (oscs → gen gain → liveGain) for crossfades. */
+  private gen: { oscs: OscillatorNode[]; gain: GainNode } | null = null;
   private currentKey: string | null = null;
   /** Last wrist volume requested — the target articulate() restores to. */
   private liveVol = 0;
@@ -104,7 +111,17 @@ export class GSVoice {
     this.liveGain.connect(this.sweepFilter);
   }
 
-  /** Sustained chord: one sawtooth per note, swapped only when notes change. */
+  /**
+   * Sustained chord: one sawtooth per note, swapped only when notes change.
+   *
+   * Swaps are CROSSFADED at a fixed look-ahead (CHORD_SWAP constants below)
+   * instead of instant stop/start: the old oscillators get a fast fade and
+   * the new ones start exactly at the swap point with a short attack ramp.
+   * This costs ~60 ms of latency but eliminates the two failure modes of
+   * instant swaps: audible clicks (hard stop/start of a saw mid-cycle) and
+   * torn frames (a shape change landing between rAF and the audio thread).
+   * The caller's ChordGate adds the stability half of the trade.
+   */
   playNotes(freqs: number[]): void {
     if (freqs.length === 0) return;
     this.stopTheremin();
@@ -113,15 +130,38 @@ export class GSVoice {
     // A new chord is a fresh note — always sounds, EXCEPT in gate mode
     // where only a forward nod opens the gate.
     if (!this.gateMode) this.choked = false;
-    this.stopChordOscillators();
-    this.oscs = freqs.map((f) => {
+    const swapAt = this.ctx.currentTime + CHORD_SWAP_LOOKAHEAD_S;
+    // Retire the current generation: ramp its generation-gain to zero over
+    // the crossfade window, then stop its oscillators just after.
+    if (this.gen) {
+      const old = this.gen;
+      old.gain.gain.setTargetAtTime(0, swapAt, CHORD_SWAP_FADE_S / 3);
+      const stopAt = swapAt + CHORD_SWAP_FADE_S + 0.05;
+      for (const osc of old.oscs) {
+        try {
+          osc.stop(stopAt);
+        } catch {
+          // already stopped
+        }
+      }
+      this.after(stopAt + 0.1, () => old.gain.disconnect());
+    }
+    // New generation: oscillators → generation gain (0 → 1 attack ramp) →
+    // liveGain. Starts exactly at the swap point, ramps in over the window.
+    const genGain = this.ctx.createGain();
+    genGain.gain.setValueAtTime(0, swapAt);
+    genGain.gain.setTargetAtTime(1, swapAt, CHORD_SWAP_FADE_S / 3);
+    genGain.connect(this.liveGain);
+    const oscs = freqs.map((f) => {
       const osc = this.ctx.createOscillator();
       osc.type = TONE_OSC_TYPE[this.tone];
       osc.frequency.value = f;
-      osc.connect(this.liveGain);
-      osc.start();
+      osc.connect(genGain);
+      osc.start(swapAt);
       return osc;
     });
+    this.gen = { oscs, gain: genGain };
+    this.oscs = oscs; // back-compat alias for stopChordOscillators
     this.currentKey = key;
   }
 
@@ -335,9 +375,15 @@ export class GSVoice {
   }
 
   stopChordOscillators(): void {
+    if (this.gen) {
+      const old = this.gen;
+      old.gain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.02);
+      this.after(this.ctx.currentTime + 0.12, () => old.gain.disconnect());
+      this.gen = null;
+    }
     for (const osc of this.oscs) {
       try {
-        osc.stop();
+        osc.stop(this.ctx.currentTime + 0.1);
       } catch {
         // already stopped
       }

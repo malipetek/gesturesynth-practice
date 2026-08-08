@@ -8,6 +8,7 @@ import {
   type SynthTone,
 } from '../lib/gsVoice';
 import { NodDetector } from '../lib/nod';
+import { ChordGate } from '../lib/chordGate';
 import {
   compareFrame,
   degreeRootHz,
@@ -379,6 +380,10 @@ export default function Player({ song }: { song: Song }) {
     let raf = 0;
     let lastT = performance.now();
     const nods = { left: new NodDetector(), right: new NodDetector() };
+    // Deliberate-latency trade: the audio follows only COMMITTED shapes
+    // (2 stable frames), so 1-frame misreads during fast changes never
+    // sound. HUD/scoring still use the raw frame — instant feedback.
+    const gate = new ChordGate<number[]>(2);
     const loop = () => {
       const now = performance.now();
       const dt = Math.min(0.1, (now - lastT) / 1000);
@@ -405,8 +410,13 @@ export default function Player({ song }: { song: Song }) {
           const world = frame?.left?.world ?? null;
           const qual = frame?.right?.quality ?? null;
           const root = deg !== null ? degreeRootHz(song.key, deg) : null;
-          if (root && world && qual) {
-            voice.playNotes(voicingNotes(root, world, qual, frame?.right?.octave ?? 0));
+          const freqs = root && world && qual ? voicingNotes(root, world, qual, frame?.right?.octave ?? 0) : null;
+          const key = freqs ? freqs.map((f) => f.toFixed(1)).join(',') : null;
+          const committed = gate.update(key, freqs);
+          if (committed.changed && committed.payload) {
+            voice.playNotes(committed.payload);
+          }
+          if (gate.sounding) {
             voice.setVolume(frame?.right?.volume ?? 0.5);
           } else {
             voice.setVolume(0);
