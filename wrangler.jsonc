@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "gesturesynth-practice",
+  "account_id": "a60af2542282e283101650bebed42dcf",
   "compatibility_date": "2026-08-04",
   "assets": {
     "directory": "./dist",
