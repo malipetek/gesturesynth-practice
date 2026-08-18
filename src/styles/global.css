@@ -466,6 +466,36 @@ a.card:hover {
   gap: 0.75rem;
   margin-top: 1.4rem;
 }
+
+/* Homepage intro paragraph under the hero. */
+.intro {
+  max-width: 46rem;
+  margin-top: 1.5rem;
+  font-size: 1.05rem;
+  color: var(--muted);
+}
+
+.intro p {
+  margin: 0;
+}
+
+.guides {
+  margin-top: 4rem;
+}
+
+.guide-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.05rem;
+  color: var(--text);
+}
+
+.guide-card p {
+  margin: 0;
+}
+
+.guide-card:hover h3 {
+  color: var(--mint);
+}
 .steps {
   margin-top: 4rem;
 }
@@ -751,6 +781,42 @@ a.card:hover {
 .chord-list strong {
   font-family: var(--font-mono);
   min-width: 3.5rem;
+}
+
+/* Related-song links under the song editorial block. */
+.related-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.related-list li {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--card);
+}
+
+.related-list a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.6rem 0.9rem;
+  color: var(--text);
+}
+
+.related-list a:hover {
+  text-decoration: none;
+  border-color: var(--border-strong);
+}
+
+.related-list strong {
+  color: var(--mint);
+}
+
+.related-list .muted {
+  font-size: 0.9rem;
 }
 
 .song-chords {

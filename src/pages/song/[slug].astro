@@ -2,6 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import Player from '../../components/Player';
 import { getSongs } from '../../lib/songs';
+import { getEditorial } from '../../lib/editorial';
 import { QUALITY_LABELS, DEGREE_LABELS, type GestureTarget } from '../../lib/types';
 
 export function getStaticPaths() {
@@ -20,6 +21,8 @@ const gestureText = (t: GestureTarget) =>
 	`degree ${DEGREE_LABELS[t.degree]} (${t.world} key), quality ${QUALITY_LABELS[t.world][t.quality as 1 | 2 | 3 | 4]}`;
 
 const canonical = new URL(`/song/${song.slug}/`, Astro.site).href;
+
+const editorial = getEditorial(song);
 ---
 
 <Layout
@@ -33,6 +36,8 @@ const canonical = new URL(`/song/${song.slug}/`, Astro.site).href;
 			'@type': 'MusicPlaylist',
 			name: `${song.title} — Gesture Synth chord chart`,
 			numTracks: uniqueChords.length,
+			datePublished: '2026-08-18',
+			dateModified: '2026-08-18',
 			track: uniqueChords.map((e) => ({
 				'@type': 'MusicRecording',
 				name: `${e.chordName} (${DEGREE_LABELS[e.target.degree]} ${e.target.world})`,
@@ -72,4 +77,61 @@ const canonical = new URL(`/song/${song.slug}/`, Astro.site).href;
 			))}
 		</ul>
 	</section>
+
+	{
+		editorial && (
+			<article class="content container">
+				<h2>How to play "{song.title}" on Gesture Synth</h2>
+				{editorial.intro.map((p) => (
+					<p>{p}</p>
+				))}
+
+				<h3>Difficulty: {editorial.difficulty}</h3>
+				<p class="muted">{editorial.difficultyNote}</p>
+
+				{editorial.sections.map((s) => (
+					<>
+						<h3>{s.title}</h3>
+						<p>{s.body}</p>
+					</>
+				))}
+
+				<h3>Practice tips</h3>
+				<ul>
+					{editorial.tips.map((t) => (
+						<li>{t}</li>
+					))}
+				</ul>
+
+				<h3>Keep going</h3>
+				<p class="muted">
+					Once you can play "{song.title}" from memory, try these next:
+				</p>
+				<ul class="related-list">
+					{editorial.related.map((slug) => {
+						const next = getSongs().find((s) => s.slug === slug);
+						return (
+							next && (
+								<li>
+									<a href={`/song/${slug}/`}>
+										<strong>{next.title}</strong>
+										<span class="muted"> · {next.artist}</span>
+									</a>
+								</li>
+							)
+						);
+					})}
+				</ul>
+
+				<div class="card cta">
+					<h3>Ready for the next challenge?</h3>
+					<p class="muted">
+						Browse the rest of the songbook or review the gesture reference.
+					</p>
+					<a class="btn" href="/">Browse the songbook</a>
+					<a class="btn" href="/chords/">Chord gesture reference</a>
+				</div>
+			</article>
+		)
+	}
 </Layout>

@@ -41,6 +41,17 @@ const barCount = (song: Song) =>
 		</div>
 	</section>
 
+	<section class="intro container">
+		<p>
+			Gesture Synth turns your webcam into a musical instrument: your left hand picks the
+			scale degree and major or minor key, your right hand shapes the chord quality and
+			octave. The songbook below turns that gesture language into playable charts — each
+			song shows the exact hand shape for every chord, and the play-along player scores you
+			against each target with a backing pad and metronome. New to the instrument?
+			<a href="/guides/first-song/">Start with our guide to picking your first song</a>.
+		</p>
+	</section>
+
 	<section class="steps container">
 		<h2 class="muted">How it works</h2>
 		<div class="grid grid-3">
@@ -97,6 +108,34 @@ const barCount = (song: Song) =>
 	</section>
 
 	<CustomSongList client:only="react" />
+
+	<section class="guides container">
+		<div class="songbook-head">
+			<h2>Guides</h2>
+		</div>
+		<div class="grid grid-3">
+			<a class="card guide-card" href="/guides/first-song/">
+				<h3>How to pick your first song</h3>
+				<p class="muted">
+					A simple framework for matching a chart to your skill level, with specific
+					recommendations from the songbook.
+				</p>
+			</a>
+			<a class="card guide-card" href="/guides/playing-in-time/">
+				<h3>Playing in time</h3>
+				<p class="muted">
+					Three stages of drills for hitting every chord exactly on the beat — the skill
+					that makes it sound like playing.
+				</p>
+			</a>
+			<a class="card guide-card" href="/guides/">
+				<h3>All songs by difficulty</h3>
+				<p class="muted">
+					Every song in the book rated Beginner to Advanced, with the reason why.
+				</p>
+			</a>
+		</div>
+	</section>
 
 	<section class="songbook container">
 		<div class="songbook-head">

@@ -1,5 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: 
-https://gesturesynthschool.com/sitemap-index.xml
+Sitemap: https://gesturesynthschool.com/sitemap-index.xml

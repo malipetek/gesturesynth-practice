@@ -1,0 +1,79 @@
+---
+import Layout from '../layouts/Layout.astro';
+---
+
+<Layout
+	title="About Gesture Synth School | Gesture Synth Practice"
+	description="Gesture Synth School is a free practice companion for Gesture Synth: chord charts, hand gesture guides, and a webcam play-along songbook."
+	canonical="https://gesturesynthschool.com/about/"
+	ogType="article"
+	jsonLd={[
+		{
+			'@context': 'https://schema.org',
+			'@type': 'AboutPage',
+			name: 'About Gesture Synth School',
+			url: 'https://gesturesynthschool.com/about/',
+			mainEntity: {
+				'@type': 'WebSite',
+				name: 'Gesture Synth School',
+				url: 'https://gesturesynthschool.com/',
+			},
+		},
+	]}
+>
+	<article class="content container">
+		<p class="eyebrow">About</p>
+		<h1>About Gesture Synth School</h1>
+		<p class="lede">
+			Gesture Synth School is a free, independent practice companion for Gesture Synth —
+			the webcam instrument that turns your hands into a chord machine.
+		</p>
+
+		<h2>What this site does</h2>
+		<p>
+			Gesture Synth maps hand gestures to music: your left hand picks a scale degree and a
+			major or minor key, your right hand shapes the chord quality and octave. It is magical
+			the first time the song rings out — and it is hard to know where to start.
+		</p>
+		<p>
+			This site fills that gap. The songbook turns popular songs into chord charts written
+			in gesture language, and the play-along player scores your hands against each target
+			shape with a backing pad and metronome. The
+			<a href="/guide/">how to play guide</a> and
+			<a href="/chords/">chord reference</a> document every gesture against the open-source
+			engine, and the <a href="/weld/">Gesture Synth Weld guide</a> covers the popular web
+			version of the instrument.
+		</p>
+
+		<h2>Why it exists</h2>
+		<p>
+			Gesture Synth went viral on short video, and thousands of people are learning it from
+			clips — but clips move fast and practice needs structure. We built the songbook as a
+			place to slow down: pick a song, learn the shapes, and build the muscle memory one
+			chord at a time.
+		</p>
+
+		<h2>Privacy</h2>
+		<p>
+			The practice tools run entirely in your browser. Your webcam is never uploaded or
+			stored by us — hand tracking happens locally on your device. For the full details, see
+			the <a href="/privacy/">privacy policy</a>.
+		</p>
+
+		<h2>Contact</h2>
+		<p>
+			Found a broken chart, have a song request, or want to report an issue? We would love
+			to hear from you at
+			<a href="mailto:feedback@gesturesynthschool.com"
+				>feedback@gesturesynthschool.com</a
+			>.
+		</p>
+
+		<div class="card cta">
+			<h3>Ready to play?</h3>
+			<p class="muted">Start with the beginner songs and work your way up.</p>
+			<a class="btn" href="/">Browse the songbook</a>
+			<a class="btn" href="/guide/">Learn the gestures</a>
+		</div>
+	</article>
+</Layout>

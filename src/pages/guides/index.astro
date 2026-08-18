@@ -1,0 +1,107 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import { getSongs } from '../../lib/songs';
+import { getEditorial } from '../../lib/editorial';
+
+const ranked = getSongs()
+	.map((song) => {
+		const ed = getEditorial(song);
+		return {
+			song,
+			difficulty: ed?.difficulty ?? 'Easy',
+			difficultyNote: ed?.difficultyNote,
+		};
+	})
+	.sort((a, b) => a.song.title.localeCompare(b.song.title));
+---
+
+<Layout
+	title="Practice Guides | Gesture Synth School"
+	description="Step-by-step practice guides for Gesture Synth: picking your first song, playing in time, and a complete ranked list of every song in the songbook by difficulty."
+	ogType="article"
+>
+	<article class="content container">
+		<p class="eyebrow">Guides</p>
+		<h1>Practice Guides</h1>
+		<p class="lede">
+			Free, structured practice plans for learning Gesture Synth with the songbook — plus a
+			full list of every song ranked by difficulty.
+		</p>
+
+		<h2>Getting started</h2>
+		<ul>
+			<li>
+				<a href="/guide/">How to play Gesture Synth</a>
+				<p class="muted">
+					Every gesture documented against the engine: scale degrees, major/minor tilt,
+					chord qualities, octave, and volume.
+				</p>
+			</li>
+			<li>
+				<a href="/chords/">Chord gesture reference</a>
+				<p class="muted">
+					The complete chord gesture tables, plus which chords each songbook song uses.
+				</p>
+			</li>
+			<li>
+				<a href="/weld/">Gesture Synth Weld guide</a>
+				<p class="muted">
+					How the popular Vercel-hosted version works and how to play it.
+				</p>
+			</li>
+		</ul>
+
+		<h2>Practice plans</h2>
+		<ul>
+			<li>
+				<a href="/guides/first-song/">How to pick your first song</a>
+				<p class="muted">
+					A simple framework for choosing a chart that matches your current skill — with
+					specific recommendations from the songbook.
+				</p>
+			</li>
+			<li>
+				<a href="/guides/playing-in-time/">Playing in time</a>
+				<p class="muted">
+					Why timing is the real skill on Gesture Synth, and a three-stage drill for
+					staying locked to the beat.
+				</p>
+			</li>
+		</ul>
+
+		<h2>Every song by difficulty</h2>
+		<p>
+			The songbook currently has {ranked.length} songs. This is the full list, sorted by
+			title, with the difficulty we give each one on its page:
+		</p>
+		<table class="gesture-table">
+			<thead>
+				<tr>
+					<th>Song</th>
+					<th>Difficulty</th>
+					<th>Why</th>
+				</tr>
+			</thead>
+			<tbody>
+				{ranked.map(({ song, difficulty, difficultyNote }) => (
+					<tr>
+						<td>
+							<a href={`/song/${song.slug}/`}>
+								<strong>{song.title}</strong>
+							</a>{' '}
+							<span class="muted">· {song.artist}</span>
+						</td>
+						<td>{difficulty}</td>
+						<td class="muted">{difficultyNote}</td>
+					</tr>
+				))}
+			</tbody>
+		</table>
+
+		<div class="card cta">
+			<h3>Ready to practice?</h3>
+			<p class="muted">Pick a song and follow the chord chart with your hands.</p>
+			<a class="btn" href="/">Browse the songbook</a>
+		</div>
+	</article>
+</Layout>
